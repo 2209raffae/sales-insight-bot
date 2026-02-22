@@ -21,6 +21,7 @@
           <a href="/static/leads.html">KPI Leads</a>
           <a href="/static/spend.html">Spese</a>
           <a href="/static/budgets.html">Budget</a>
+          <a href="/static/report.html">Report</a>
           <a href="/static/chat.html">Chat</a>
         </div>
       </div>
@@ -55,7 +56,8 @@
 
           <div class="card">
             <h2 style="margin-bottom:.25rem;">Carica CSV Spese</h2>
-            <p style="margin-bottom:1rem;font-size:.85rem;">Obbligatori: <code>date</code>, <code>source</code>, <code>spend</code></p>
+            <p style="margin-bottom:1rem;font-size:.85rem;">Obbligatori: <code>date</code>, <code>source</code>,
+              <code>spend</code></p>
             <div class="drop-zone" id="spend-drop" style="padding:2rem 1rem;">
               <p>Trascina qui o fai clic per selezionare</p>
               <p style="font-size:.8rem;margin-top:.25rem;" id="spend-file-name">Nessun file selezionato</p>
@@ -77,7 +79,8 @@
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
             <h2 style="margin:0;">Storico caricamenti</h2>
             <div style="display:flex;gap:.5rem;align-items:center;">
-              <select id="history-filter" class="btn btn-ghost" style="font-size:.85rem;padding:6px 12px;cursor:pointer;">
+              <select id="history-filter" class="btn btn-ghost"
+                style="font-size:.85rem;padding:6px 12px;cursor:pointer;">
                 <option value="">Tutti i dataset</option>
                 <option value="leads">Leads</option>
                 <option value="spend">Spese</option>
@@ -88,9 +91,21 @@
           <div class="table-wrap">
             <table id="history-table">
               <thead>
-                <tr><th>Dataset</th><th>File</th><th>Caricato il</th><th>Nuovi</th><th>Scartati</th><th>Aggiornati</th><th></th></tr>
+                <tr>
+                  <th>Dataset</th>
+                  <th>File</th>
+                  <th>Caricato il</th>
+                  <th>Nuovi</th>
+                  <th>Scartati</th>
+                  <th>Aggiornati</th>
+                  <th></th>
+                </tr>
               </thead>
-              <tbody id="history-tbody"><tr><td colspan="7" class="empty-state">Caricamento...</td></tr></tbody>
+              <tbody id="history-tbody">
+                <tr>
+                  <td colspan="7" class="empty-state">Caricamento...</td>
+                </tr>
+              </tbody>
             </table>
           </div>
         </div>
@@ -186,7 +201,9 @@
   </script>
   <style>
     @media(max-width:640px) {
-      .upload-grid { grid-template-columns: 1fr !important; }
+      .upload-grid {
+        grid-template-columns: 1fr !important;
+      }
     }
   </style>
 </body>

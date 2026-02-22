@@ -21,6 +21,7 @@
           <a href="/static/leads.html" class="active">KPI Leads</a>
           <a href="/static/spend.html">Spese</a>
           <a href="/static/budgets.html">Budget</a>
+          <a href="/static/report.html">Report</a>
           <a href="/static/chat.html">Chat</a>
         </div>
       </div>
@@ -28,14 +29,16 @@
 
     <main>
       <div class="container">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
+        <div
+          style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
           <div>
             <h1 style="margin-bottom:.35rem;">Dashboard Leads</h1>
             <p>Metriche deterministiche: nessuna AI nei calcoli KPI.</p>
           </div>
           <div style="display:flex;gap:.75rem;align-items:center;">
             <label style="font-size:.85rem;color:var(--text-muted);">Soglia inattivita:</label>
-            <input type="number" id="stale-days" value="3" min="0" max="30" style="width:70px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);" />
+            <input type="number" id="stale-days" value="3" min="0" max="30"
+              style="width:70px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);" />
             <span style="font-size:.85rem;color:var(--text-muted);">giorni</span>
             <button class="btn btn-primary" onclick="loadAll()">Aggiorna</button>
           </div>
@@ -57,11 +60,38 @@
             <button class="tab-btn" onclick="switchTab('risks')" id="risks-tab-btn">A rischio</button>
           </div>
 
-          <div class="tab-panel active card" id="tab-status"><h2 class="section-title">Lead per stato</h2><div id="status-content"><div class="empty-state">Caricamento...</div></div></div>
-          <div class="tab-panel card" id="tab-source"><h2 class="section-title">Top fonti lead</h2><div id="source-content"><div class="empty-state">Caricamento...</div></div></div>
-          <div class="tab-panel card" id="tab-aging"><h2 class="section-title">Analisi aging lead</h2><div id="aging-content"><div class="empty-state">Caricamento...</div></div></div>
-          <div class="tab-panel card" id="tab-operators"><h2 class="section-title">Carico operatori</h2><div id="operators-content"><div class="empty-state">Caricamento...</div></div></div>
-          <div class="tab-panel card" id="tab-risks"><h2 class="section-title">Lead a rischio <span id="risk-count-badge" class="badge" style="margin-left:.5rem;"></span></h2><p id="risk-meta" style="font-size:.85rem;margin-bottom:1rem;"></p><div id="risks-content"><div class="empty-state">Caricamento...</div></div></div>
+          <div class="tab-panel active card" id="tab-status">
+            <h2 class="section-title">Lead per stato</h2>
+            <div id="status-content">
+              <div class="empty-state">Caricamento...</div>
+            </div>
+          </div>
+          <div class="tab-panel card" id="tab-source">
+            <h2 class="section-title">Top fonti lead</h2>
+            <div id="source-content">
+              <div class="empty-state">Caricamento...</div>
+            </div>
+          </div>
+          <div class="tab-panel card" id="tab-aging">
+            <h2 class="section-title">Analisi aging lead</h2>
+            <div id="aging-content">
+              <div class="empty-state">Caricamento...</div>
+            </div>
+          </div>
+          <div class="tab-panel card" id="tab-operators">
+            <h2 class="section-title">Carico operatori</h2>
+            <div id="operators-content">
+              <div class="empty-state">Caricamento...</div>
+            </div>
+          </div>
+          <div class="tab-panel card" id="tab-risks">
+            <h2 class="section-title">Lead a rischio <span id="risk-count-badge" class="badge"
+                style="margin-left:.5rem;"></span></h2>
+            <p id="risk-meta" style="font-size:.85rem;margin-bottom:1rem;"></p>
+            <div id="risks-content">
+              <div class="empty-state">Caricamento...</div>
+            </div>
+          </div>
         </div>
       </div>
     </main>
@@ -102,10 +132,10 @@
       try {
         const d = await apiFetch('/api/kpi/leads/by-status');
         const rows = d.leads_by_status || [];
-        const openCount = rows.filter(r => ['da lavorare','aperto','open','nuovo','assegnato','in lavorazione','pending','new','assigned'].includes((r.status || '').toLowerCase())).reduce((s,r)=>s+r.count,0);
+        const openCount = rows.filter(r => ['da lavorare', 'aperto', 'open', 'nuovo', 'assegnato', 'in lavorazione', 'pending', 'new', 'assigned'].includes((r.status || '').toLowerCase())).reduce((s, r) => s + r.count, 0);
         document.getElementById('stats-grid').innerHTML = `
           <div class="stat-card"><span class="stat-label">Lead totali</span><span class="stat-value">${num(d.total_leads || 0)}</span></div>
-          <div class="stat-card"><span class="stat-label">Aperti / Attivi</span><span class="stat-value" style="color:var(--warning)">${num(openCount)}</span><span class="stat-sub">${d.total_leads ? ((openCount/d.total_leads)*100).toFixed(1) : 0}% del totale</span></div>
+          <div class="stat-card"><span class="stat-label">Aperti / Attivi</span><span class="stat-value" style="color:var(--warning)">${num(openCount)}</span><span class="stat-sub">${d.total_leads ? ((openCount / d.total_leads) * 100).toFixed(1) : 0}% del totale</span></div>
           <div class="stat-card"><span class="stat-label">Stati unici</span><span class="stat-value">${rows.length}</span></div>`;
         if (!rows.length) { document.getElementById('status-content').innerHTML = '<div class="empty-state">Nessun dato</div>'; return; }
         const max = Math.max(...rows.map(r => r.count));

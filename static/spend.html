@@ -5,7 +5,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Lead &amp; Spend Copilot - KPI Spese</title>
-    <meta name="description" content="Analisi spese marketing: CPL, costo per lead vincente, pianificato vs actual e alert di sforamento." />
+    <meta name="description"
+        content="Analisi spese marketing: CPL, costo per lead vincente, pianificato vs actual e alert di sforamento." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/static/style.css" />
@@ -77,6 +78,7 @@
                     <a href="/static/leads.html">KPI Leads</a>
                     <a href="/static/spend.html" class="active">Spese</a>
                     <a href="/static/budgets.html">Budget</a>
+                    <a href="/static/report.html">Report</a>
                     <a href="/static/chat.html">Chat</a>
                 </div>
             </div>
@@ -84,10 +86,12 @@
 
         <main>
             <div class="container">
-                <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+                <div
+                    style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
                     <div>
                         <h1 style="margin-bottom:.35rem;">KPI Spese</h1>
-                        <p>Efficienza delle spese marketing: CPL, costo per lead vincente, pianificato vs actual e alert di sforamento.</p>
+                        <p>Efficienza delle spese marketing: CPL, costo per lead vincente, pianificato vs actual e alert
+                            di sforamento.</p>
                     </div>
                     <div style="display:flex;flex-direction:column;gap:.6rem;align-items:flex-end;">
                         <div class="date-range-row">
@@ -102,13 +106,18 @@
                         </div>
                         <div style="font-size:.8rem;color:var(--text-muted);">
                             Stati vincenti:
-                            <input type="text" id="winning-input" value="LAVORATA,CHIUSA" style="width:180px;padding:4px 8px;font-size:.8rem;display:inline-block;" />
+                            <input type="text" id="winning-input" value="LAVORATA,CHIUSA"
+                                style="width:180px;padding:4px 8px;font-size:.8rem;display:inline-block;" />
                         </div>
                         <div class="mode-toggle">
-                            <span style="font-size:.8rem;color:var(--text-muted);font-weight:600;margin-right:2px;">Modalita:</span>
-                            <label><input type="radio" name="spend-mode" value="actual" checked onchange="refreshAll()"><span>Actual (CSV + Manuale)</span></label>
-                            <label><input type="radio" name="spend-mode" value="planned" onchange="refreshAll()"><span>Planned (Budget)</span></label>
-                            <label><input type="radio" name="spend-mode" value="both" onchange="refreshAll()"><span>Entrambi</span></label>
+                            <span
+                                style="font-size:.8rem;color:var(--text-muted);font-weight:600;margin-right:2px;">Modalita:</span>
+                            <label><input type="radio" name="spend-mode" value="actual" checked
+                                    onchange="refreshAll()"><span>Actual (CSV + Manuale)</span></label>
+                            <label><input type="radio" name="spend-mode" value="planned"
+                                    onchange="refreshAll()"><span>Planned (Budget)</span></label>
+                            <label><input type="radio" name="spend-mode" value="both"
+                                    onchange="refreshAll()"><span>Entrambi</span></label>
                         </div>
                     </div>
                 </div>
@@ -132,7 +141,8 @@
                     </div>
                 </div>
 
-                <div id="summary-error-banner" class="card" style="display:none;border-color:var(--danger);margin-bottom:1rem;color:var(--danger);"></div>
+                <div id="summary-error-banner" class="card"
+                    style="display:none;border-color:var(--danger);margin-bottom:1rem;color:var(--danger);"></div>
 
                 <div class="tabs">
                     <button class="tab-btn active" onclick="switchTab('by-source', this)">Per fonte</button>
@@ -145,63 +155,98 @@
 
                 <div class="tab-panel card active" id="panel-by-source">
                     <h3 class="section-title">Spesa per fonte</h3>
-                    <div id="by-source-content"><div class="empty-state">Caricamento...</div></div>
+                    <div id="by-source-content">
+                        <div class="empty-state">Caricamento...</div>
+                    </div>
                 </div>
 
                 <div class="tab-panel card" id="panel-cpl">
                     <h3 class="section-title">Costo per lead (CPL) per fonte</h3>
-                    <div id="cpl-content"><div class="empty-state">Caricamento...</div></div>
+                    <div id="cpl-content">
+                        <div class="empty-state">Caricamento...</div>
+                    </div>
                 </div>
 
                 <div class="tab-panel card" id="panel-cost-winning">
                     <h3 class="section-title">Costo per lead vincente per fonte</h3>
-                    <p style="font-size:.85rem;margin-bottom:1rem;">Vincente = stato incluso nell'elenco configurato sopra.</p>
-                    <div id="cost-winning-content"><div class="empty-state">Caricamento...</div></div>
+                    <p style="font-size:.85rem;margin-bottom:1rem;">Vincente = stato incluso nell'elenco configurato
+                        sopra.</p>
+                    <div id="cost-winning-content">
+                        <div class="empty-state">Caricamento...</div>
+                    </div>
                 </div>
 
                 <div class="tab-panel card" id="panel-alerts">
                     <h3 class="section-title">Alert sforamento</h3>
-                    <p style="font-size:.85rem;margin-bottom:1rem;">Fonti in cui il costo per lead vincente supera 2x la media.</p>
-                    <div id="alerts-content"><div class="empty-state">Caricamento...</div></div>
+                    <p style="font-size:.85rem;margin-bottom:1rem;">Fonti in cui il costo per lead vincente supera 2x la
+                        media.</p>
+                    <div id="alerts-content">
+                        <div class="empty-state">Caricamento...</div>
+                    </div>
                 </div>
 
                 <div class="tab-panel card" id="panel-trend">
                     <h3 class="section-title">Trend mensile spese + CPL</h3>
-                    <div id="trend-content"><div class="empty-state">Caricamento...</div></div>
+                    <div id="trend-content">
+                        <div class="empty-state">Caricamento...</div>
+                    </div>
                 </div>
 
                 <div class="tab-panel card" id="panel-manual">
                     <h3 class="section-title">Voci manuali di spesa actual</h3>
                     <p style="font-size:.85rem;margin-bottom:1.2rem;color:var(--text-muted);">
-                        Registra spese actual non presenti nei CSV. Queste voci rientrano in tutte le metriche come <strong>actual</strong>.
+                        Registra spese actual non presenti nei CSV. Queste voci rientrano in tutte le metriche come
+                        <strong>actual</strong>.
                     </p>
 
-                    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:1.2rem;margin-bottom:1.5rem;">
+                    <div
+                        style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:1.2rem;margin-bottom:1.5rem;">
                         <h4 style="margin-bottom:1rem;" id="manual-form-title">Nuova voce manuale</h4>
                         <input type="hidden" id="m-edit-id" />
                         <div class="manual-form">
                             <div class="field"><label>Data</label><input type="date" id="m-date" /></div>
                             <div class="field">
                                 <label>Fonte</label>
-                                <select id="m-source"><option value="">Caricamento fonti...</option></select>
+                                <select id="m-source">
+                                    <option value="">Caricamento fonti...</option>
+                                </select>
                             </div>
-                            <div class="field"><label>Campagna (opzionale)</label><input type="text" id="m-campaign" placeholder="es. Promo Primavera" /></div>
-                            <div class="field"><label>Spesa (€)</label><input type="number" step="0.01" id="m-spend" placeholder="1500.00" /></div>
+                            <div class="field"><label>Campagna (opzionale)</label><input type="text" id="m-campaign"
+                                    placeholder="es. Promo Primavera" /></div>
+                            <div class="field"><label>Spesa (€)</label><input type="number" step="0.01" id="m-spend"
+                                    placeholder="1500.00" /></div>
                         </div>
                         <div style="margin-top:.8rem;">
-                            <label style="font-size:.75rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:3px;">Nota (opzionale)</label>
-                            <input type="text" id="m-note" placeholder="es. Campagna offline Febbraio" style="width:100%;padding:7px 10px;font-size:.85rem;" />
+                            <label
+                                style="font-size:.75rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:3px;">Nota
+                                (opzionale)</label>
+                            <input type="text" id="m-note" placeholder="es. Campagna offline Febbraio"
+                                style="width:100%;padding:7px 10px;font-size:.85rem;" />
                         </div>
                         <div style="display:flex;gap:.6rem;margin-top:1rem;">
                             <button class="btn btn-primary" onclick="saveManualEntry()">Salva voce</button>
-                            <button class="btn btn-ghost" id="m-cancel-btn" onclick="cancelManualEdit()" style="display:none;">Annulla</button>
+                            <button class="btn btn-ghost" id="m-cancel-btn" onclick="cancelManualEdit()"
+                                style="display:none;">Annulla</button>
                         </div>
                     </div>
 
                     <div class="table-wrap">
                         <table>
-                            <thead><tr><th>Data</th><th>Fonte</th><th>Campagna</th><th>Spesa</th><th>Nota</th><th></th></tr></thead>
-                            <tbody id="manual-tbody"><tr><td colspan="6" class="empty-state">Caricamento...</td></tr></tbody>
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Fonte</th>
+                                    <th>Campagna</th>
+                                    <th>Spesa</th>
+                                    <th>Nota</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="manual-tbody">
+                                <tr>
+                                    <td colspan="6" class="empty-state">Caricamento...</td>
+                                </tr>
+                            </tbody>
                         </table>
                     </div>
                 </div>

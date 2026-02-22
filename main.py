@@ -11,7 +11,7 @@ from database import engine, run_migrations
 from models import Base, LeadRecord, CampaignSpend, UploadBatch, CampaignMonthlyBudget  # noqa: F401
 
 from routers import leads_upload, leads_kpi, chat
-from routers import spend_upload, spend_kpi, uploads, budgets, manual_spend
+from routers import spend_upload, spend_kpi, uploads, budgets, manual_spend, report
 
 app = FastAPI(
     title="AI Lead & Spend Analytics Copilot",
@@ -69,6 +69,7 @@ app.include_router(uploads.router)
 app.include_router(budgets.router)
 app.include_router(manual_spend.router)
 app.include_router(chat.router)
+app.include_router(report.router)
 
 # Static files
 app.mount("/static", UTF8StaticFiles(directory="static"), name="static")

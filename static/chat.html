@@ -5,7 +5,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Lead &amp; Spend Copilot - Chat</title>
-    <meta name="description" content="Fai domande su leads e spese. KPI calcolati deterministicamente e spiegati in italiano." />
+    <meta name="description"
+        content="Fai domande su leads e spese. KPI calcolati deterministicamente e spiegati in italiano." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/static/style.css" />
@@ -21,6 +22,7 @@
                     <a href="/static/leads.html">KPI Leads</a>
                     <a href="/static/spend.html">Spese</a>
                     <a href="/static/budgets.html">Budget</a>
+                    <a href="/static/report.html">Report</a>
                     <a href="/static/chat.html" class="active">Chat</a>
                 </div>
             </div>
@@ -30,25 +32,33 @@
             <div class="container">
                 <div style="margin-bottom:1.5rem;">
                     <h1 style="margin-bottom:.35rem;">Chat AI</h1>
-                    <p>Fai domande in linguaggio naturale. I KPI sono calcolati in modo deterministico e spiegati in italiano.</p>
+                    <p>Fai domande in linguaggio naturale. I KPI sono calcolati in modo deterministico e spiegati in
+                        italiano.</p>
                 </div>
 
                 <div class="card" style="margin-bottom:1.25rem;">
-                    <h3 style="margin-bottom:.75rem;font-size:.9rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;">Prova queste domande</h3>
+                    <h3
+                        style="margin-bottom:.75rem;font-size:.9rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;">
+                        Prova queste domande</h3>
                     <div style="display:flex;flex-wrap:wrap;gap:.5rem;" id="suggestions"></div>
                 </div>
 
                 <div class="chat-container">
                     <div class="chat-messages" id="chat-messages">
                         <div class="chat-bubble bubble-bot">
-                            Ciao! Sono il tuo copilot AI per Leads e Spese. Carica i CSV e chiedimi qualsiasi analisi.<br /><br />
-                            <strong>Leads:</strong> <em>"Quanti lead sono a rischio?"</em> oppure <em>"Mostra carico operatori"</em><br />
-                            <strong>Spese:</strong> <em>"Quali fonti hanno il CPL piu basso?"</em> oppure <em>"Dove sto sforando il budget?"</em>
+                            Ciao! Sono il tuo copilot AI per Leads e Spese. Carica i CSV e chiedimi qualsiasi
+                            analisi.<br /><br />
+                            <strong>Leads:</strong> <em>"Quanti lead sono a rischio?"</em> oppure <em>"Mostra carico
+                                operatori"</em><br />
+                            <strong>Spese:</strong> <em>"Quali fonti hanno il CPL piu basso?"</em> oppure <em>"Dove sto
+                                sforando il budget?"</em>
                         </div>
                     </div>
 
                     <div class="chat-input-row">
-                        <input type="text" id="chat-input" placeholder="Chiedi di leads, spese, CPL, operatori, lead a rischio..." autocomplete="off" />
+                        <input type="text" id="chat-input"
+                            placeholder="Chiedi di leads, spese, CPL, operatori, lead a rischio..."
+                            autocomplete="off" />
                         <button class="btn btn-primary" id="send-btn" onclick="sendMessage()">
                             <span id="send-spinner" class="spinner" style="display:none;"></span>
                             Invia
@@ -56,7 +66,8 @@
                         <button class="btn btn-ghost" onclick="clearChat()">Pulisci</button>
                     </div>
 
-                    <div id="intent-bar" style="display:none;font-size:.8rem;color:var(--text-muted);padding:.25rem .5rem;">
+                    <div id="intent-bar"
+                        style="display:none;font-size:.8rem;color:var(--text-muted);padding:.25rem .5rem;">
                         Dataset: <span id="dataset-label" class="badge" style="margin-right:.4rem;"></span>
                         Intento: <code id="intent-label"></code>
                     </div>

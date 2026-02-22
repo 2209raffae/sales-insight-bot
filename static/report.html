@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Lead &amp; Spend Copilot - Report Generale</title>
+    <meta name="description" content="Report generale periodico." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/style.css" />
+    <style>
+        @media print {
+            @page {
+                margin: 1cm;
+                size: auto;
+            }
+
+            body {
+                background: #fff;
+                color: #000;
+                font-size: 10pt;
+            }
+
+            nav,
+            .no-print {
+                display: none !important;
+            }
+
+            .card {
+                border: none;
+                box-shadow: none;
+                padding: 0;
+            }
+
+            th,
+            td {
+                border: 1px solid #999;
+                color: #000;
+                padding: 6px 8px;
+                word-wrap: break-word;
+            }
+
+            h1,
+            h2 {
+                color: #000;
+            }
+
+            .table-wrap {
+                overflow-x: visible !important;
+                width: 100% !important;
+            }
+
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+                table-layout: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-wrapper">
+        <nav>
+            <div class="nav-inner">
+                <span class="nav-brand">Lead &amp; Spend Copilot</span>
+                <div class="nav-links">
+                    <a href="/static/index.html">Caricamenti</a>
+                    <a href="/static/leads.html">KPI Leads</a>
+                    <a href="/static/spend.html">Spese</a>
+                    <a href="/static/budgets.html">Budget</a>
+                    <a href="/static/report.html" class="active">Report</a>
+                    <a href="/static/chat.html">Chat</a>
+                </div>
+            </div>
+        </nav>
+
+        <main>
+            <div class="container">
+                <div
+                    style="margin-bottom:1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                    <div>
+                        <h1 style="margin-bottom:.35rem;">Report Generale</h1>
+                        <p>Aggregazione di Leads e Spese nel tempo.</p>
+                    </div>
+                    <div class="no-print" style="display: flex; gap: .75rem; align-items: center; margin-top: .75rem;">
+                        <select id="specific-period" class="btn btn-ghost" style="padding: 6px 12px; font-size: .9rem;"
+                            onchange="renderTable()" title="Seleziona periodo specifico">
+                            <option value="">Tutti i periodi</option>
+                        </select>
+                        <select id="period-select" class="btn btn-ghost" style="padding: 6px 12px; font-size: .9rem;"
+                            onchange="loadReport()">
+                            <option value="month">Mensile</option>
+                            <option value="quarter">Trimestrale</option>
+                            <option value="semester">Semestrale</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="loadReport()">Aggiorna</button>
+                        <button class="btn btn-ghost" onclick="window.print()">Stampa</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="table-wrap">
+                        <table id="report-table">
+                            <thead>
+                                <tr>
+                                    <th>Dettaglio</th>
+                                    <th>Leads</th>
+                                    <th>Vincenti</th>
+                                    <th>Spesa (€)</th>
+                                    <th>Budget (€)</th>
+                                    <th>CPL (€)</th>
+                                    <th>CPL Vincente (€)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-tbody">
+                                <tr>
+                                    <td colspan="7" class="empty-state">Seleziona un periodo e genera il report...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toast"></div>
+    <script src="/static/app.js"></script>
+    <script>
+        let currentData = null;
+
+        async function loadReport() {
+            const period = document.getElementById('period-select').value;
+            const tbody = document.getElementById('report-tbody');
+            const specificSelect = document.getElementById('specific-period');
+            const specificValue = specificSelect.value;
+
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Caricamento...</td></tr>';
+            specificSelect.innerHTML = '<option value="">Tutti i periodi</option>';
+
+            try {
+                const res = await apiFetch('/api/report/general?period=' + period);
+                if (!res.data || !res.data.length) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Nessun dato trovato per questo scenario.</td></tr>';
+                    return;
+                }
+
+                currentData = res.data;
+
+                // Populate specific-period dropdown
+                const uniquePeriods = [...new Set(currentData.map(r => r.period))].sort().reverse();
+                uniquePeriods.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p;
+                    opt.textContent = p;
+                    specificSelect.appendChild(opt);
+                });
+
+                // Keep previously selected if it still exists
+                if (uniquePeriods.includes(specificValue)) {
+                    specificSelect.value = specificValue;
+                }
+
+                renderTable();
+                showToast('Dati aggiornati', 'success');
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Errore nel caricamento del report: ${err.message}</td></tr>`;
+            }
+        }
+
+        function renderTable() {
+            if (!currentData) return;
+            const tbody = document.getElementById('report-tbody');
+            const specificPeriod = document.getElementById('specific-period').value;
+
+            const grouped = {};
+            currentData.forEach(row => {
+                if (specificPeriod && row.period !== specificPeriod) return;
+
+                if (!grouped[row.period]) {
+                    grouped[row.period] = {
+                        totals: { leads: 0, winning_leads: 0, spend: 0, budget: 0 },
+                        rows: []
+                    };
+                }
+                grouped[row.period].rows.push(row);
+                grouped[row.period].totals.leads += row.leads;
+                grouped[row.period].totals.winning_leads += row.winning_leads;
+                grouped[row.period].totals.spend += row.spend;
+                grouped[row.period].totals.budget += row.budget;
+            });
+
+            let html = '';
+            const periods = Object.keys(grouped).sort().reverse();
+            if (periods.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Nessun dato per il periodo selezionato.</td></tr>';
+                return;
+            }
+
+            periods.forEach(p => {
+                const group = grouped[p];
+
+                // Header for the period
+                html += `
+            <tr style="background:var(--surface-2);">
+              <td colspan="7"><strong style="font-size: 1.1rem; color: var(--accent);">${p}</strong></td>
+            </tr>
+          `;
+
+                // Sort rows by spend descending
+                group.rows.sort((a, b) => b.spend - a.spend).forEach(row => {
+                    html += `
+              <tr>
+                <td style="padding-left: 20px;">${row.source}</td>
+                <td>${row.leads}</td>
+                <td>${row.winning_leads}</td>
+                <td style="color:var(--success);">€ ${row.spend.toFixed(2)}</td>
+                <td style="color:var(--text-muted);">€ ${row.budget.toFixed(2)}</td>
+                <td style="color:var(--warning);">€ ${row.cpl.toFixed(2)}</td>
+                <td style="color:var(--accent);">€ ${row.cpl_winning.toFixed(2)}</td>
+              </tr>
+            `;
+                });
+
+                // Totals for this period
+                const t = group.totals;
+                const avgCpl = t.leads > 0 ? (t.spend / t.leads) : 0;
+                const avgCplWinning = t.winning_leads > 0 ? (t.spend / t.winning_leads) : 0;
+
+                html += `
+            <tr style="border-bottom: 2px solid var(--border); background:rgba(255,255,255,0.02);">
+              <td style="padding-left: 20px;"><strong>Totale ${p}</strong></td>
+              <td><strong>${t.leads}</strong></td>
+              <td><strong>${t.winning_leads}</strong></td>
+              <td><strong style="color:var(--success);">€ ${t.spend.toFixed(2)}</strong></td>
+              <td><strong style="color:var(--text-muted);">€ ${t.budget.toFixed(2)}</strong></td>
+              <td><strong style="color:var(--warning);">€ ${avgCpl.toFixed(2)}</strong></td>
+              <td><strong style="color:var(--accent);">€ ${avgCplWinning.toFixed(2)}</strong></td>
+            </tr>
+          `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        // Carica dati all'avvio in automatico
+        loadReport();
+    </script>
+</body>
+
+</html>

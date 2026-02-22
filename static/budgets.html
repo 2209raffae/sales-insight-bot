@@ -10,19 +10,87 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/static/style.css" />
     <style>
-        .tab-bar { display: flex; gap: .5rem; border-bottom: 2px solid var(--border); margin-bottom: 1.5rem; }
-        .tab-btn { background: none; border: none; padding: .6rem 1.2rem; cursor: pointer; font-size: .9rem; color: var(--text-muted); font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: .15s; }
-        .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
-        .tab-pane { display: none; }
-        .tab-pane.active { display: block; }
-        .kpi-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: .75rem; font-weight: 700; margin-left: .4rem; }
-        .badge-ok { background: #22c55e22; color: #16a34a; }
-        .badge-over { background: #ef444422; color: #dc2626; }
-        .badge-under { background: #f59e0b22; color: #d97706; }
-        .util-bar { height: 6px; border-radius: 3px; background: var(--border); margin-top: 4px; }
-        .util-fill { height: 100%; border-radius: 3px; transition: .3s; }
-        .month-picker { display: flex; gap: .5rem; align-items: center; }
-        .month-picker select, .month-picker input { padding: 6px 10px; font-size: .85rem; }
+        .tab-bar {
+            display: flex;
+            gap: .5rem;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 1.5rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: .6rem 1.2rem;
+            cursor: pointer;
+            font-size: .9rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: .15s;
+        }
+
+        .tab-btn.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        .kpi-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: .75rem;
+            font-weight: 700;
+            margin-left: .4rem;
+        }
+
+        .badge-ok {
+            background: #22c55e22;
+            color: #16a34a;
+        }
+
+        .badge-over {
+            background: #ef444422;
+            color: #dc2626;
+        }
+
+        .badge-under {
+            background: #f59e0b22;
+            color: #d97706;
+        }
+
+        .util-bar {
+            height: 6px;
+            border-radius: 3px;
+            background: var(--border);
+            margin-top: 4px;
+        }
+
+        .util-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: .3s;
+        }
+
+        .month-picker {
+            display: flex;
+            gap: .5rem;
+            align-items: center;
+        }
+
+        .month-picker select,
+        .month-picker input {
+            padding: 6px 10px;
+            font-size: .85rem;
+        }
     </style>
 </head>
 
@@ -36,6 +104,7 @@
                     <a href="/static/leads.html">KPI Leads</a>
                     <a href="/static/spend.html">Spese</a>
                     <a href="/static/budgets.html" class="active">Budget</a>
+                    <a href="/static/report.html">Report</a>
                     <a href="/static/chat.html">Chat</a>
                 </div>
             </div>
@@ -58,7 +127,8 @@
 
                 <div id="tab-budgets" class="tab-pane active">
                     <div style="display:flex;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center;">
-                        <input type="number" id="filter-year" placeholder="Anno" style="width:90px;padding:6px 10px;font-size:.85rem;" />
+                        <input type="number" id="filter-year" placeholder="Anno"
+                            style="width:90px;padding:6px 10px;font-size:.85rem;" />
                         <select id="filter-month" style="padding:6px 10px;font-size:.85rem;"></select>
                         <button class="btn btn-ghost" onclick="loadBudgets()">Filtra</button>
                     </div>
@@ -66,8 +136,19 @@
                     <div class="card">
                         <div class="table-wrap">
                             <table>
-                                <thead><tr><th>Fonte</th><th>Periodo</th><th>Budget pianificato</th><th></th></tr></thead>
-                                <tbody id="budget-tbody"><tr><td colspan="4" class="empty-state">Caricamento...</td></tr></tbody>
+                                <thead>
+                                    <tr>
+                                        <th>Fonte</th>
+                                        <th>Periodo</th>
+                                        <th>Budget pianificato</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="budget-tbody">
+                                    <tr>
+                                        <td colspan="4" class="empty-state">Caricamento...</td>
+                                    </tr>
+                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -83,7 +164,8 @@
                         </div>
                         <div>
                             <label class="stat-label">Stati vincenti</label>
-                            <input type="text" id="kpi-winning" value="LAVORATA,CHIUSA" style="width:180px;padding:6px 10px;font-size:.85rem;" />
+                            <input type="text" id="kpi-winning" value="LAVORATA,CHIUSA"
+                                style="width:180px;padding:6px 10px;font-size:.85rem;" />
                         </div>
                         <button class="btn btn-primary" onclick="loadReport()">Carica report</button>
                     </div>
@@ -94,13 +176,30 @@
                         <div class="table-wrap">
                             <table>
                                 <thead>
-                                    <tr><th>Fonte</th><th>Pianificato</th><th>Actual</th><th>Utilizzo %</th><th>Lead aperti</th><th>Lead vincenti</th><th>CPL Actual</th><th>CPL Target</th><th>Costo/Lead vincente</th><th>Stato</th></tr>
+                                    <tr>
+                                        <th>Fonte</th>
+                                        <th>Pianificato</th>
+                                        <th>Actual</th>
+                                        <th>Utilizzo %</th>
+                                        <th>Lead aperti</th>
+                                        <th>Lead vincenti</th>
+                                        <th>CPL Actual</th>
+                                        <th>CPL Target</th>
+                                        <th>Costo/Lead vincente</th>
+                                        <th>Stato</th>
+                                    </tr>
                                 </thead>
-                                <tbody id="report-tbody"><tr><td colspan="10" class="empty-state">Seleziona anno e mese e clicca Carica report.</td></tr></tbody>
+                                <tbody id="report-tbody">
+                                    <tr>
+                                        <td colspan="10" class="empty-state">Seleziona anno e mese e clicca Carica
+                                            report.</td>
+                                    </tr>
+                                </tbody>
                             </table>
                         </div>
                     </div>
-                    <p style="font-size:.75rem;color:var(--text-muted);margin-top:.75rem;">I lead vincenti usano <code>closed_at</code> quando disponibile, altrimenti <code>updated_at</code>.</p>
+                    <p style="font-size:.75rem;color:var(--text-muted);margin-top:.75rem;">I lead vincenti usano
+                        <code>closed_at</code> quando disponibile, altrimenti <code>updated_at</code>.</p>
                 </div>
             </div>
         </main>
@@ -113,11 +212,15 @@
                 <input type="hidden" id="bud-id" />
                 <div style="margin-bottom:1rem;">
                     <label class="stat-label" style="display:block;margin-bottom:.4rem;">Fonte</label>
-                    <select id="bud-source" required><option value="">Caricamento fonti...</option></select>
+                    <select id="bud-source" required>
+                        <option value="">Caricamento fonti...</option>
+                    </select>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
-                    <div><label class="stat-label" style="display:block;margin-bottom:.4rem;">Anno</label><input type="number" id="bud-year" required min="2020" max="2035" /></div>
-                    <div><label class="stat-label" style="display:block;margin-bottom:.4rem;">Mese</label><select id="bud-month" required></select></div>
+                    <div><label class="stat-label" style="display:block;margin-bottom:.4rem;">Anno</label><input
+                            type="number" id="bud-year" required min="2020" max="2035" /></div>
+                    <div><label class="stat-label" style="display:block;margin-bottom:.4rem;">Mese</label><select
+                            id="bud-month" required></select></div>
                 </div>
                 <div style="margin-bottom:1.5rem;">
                     <label class="stat-label" style="display:block;margin-bottom:.4rem;">Budget pianificato (€)</label>
