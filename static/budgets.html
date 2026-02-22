@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Lead &amp; Spend Copilot - Budget</title>
+    <meta name="description" content="Gestione budget mensili per fonte e confronto budget vs consuntivo." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/style.css" />
+    <style>
+        .tab-bar { display: flex; gap: .5rem; border-bottom: 2px solid var(--border); margin-bottom: 1.5rem; }
+        .tab-btn { background: none; border: none; padding: .6rem 1.2rem; cursor: pointer; font-size: .9rem; color: var(--text-muted); font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: .15s; }
+        .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+        .kpi-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: .75rem; font-weight: 700; margin-left: .4rem; }
+        .badge-ok { background: #22c55e22; color: #16a34a; }
+        .badge-over { background: #ef444422; color: #dc2626; }
+        .badge-under { background: #f59e0b22; color: #d97706; }
+        .util-bar { height: 6px; border-radius: 3px; background: var(--border); margin-top: 4px; }
+        .util-fill { height: 100%; border-radius: 3px; transition: .3s; }
+        .month-picker { display: flex; gap: .5rem; align-items: center; }
+        .month-picker select, .month-picker input { padding: 6px 10px; font-size: .85rem; }
+    </style>
+</head>
+
+<body>
+    <div class="page-wrapper">
+        <nav>
+            <div class="nav-inner">
+                <span class="nav-brand">Lead &amp; Spend Copilot</span>
+                <div class="nav-links">
+                    <a href="/static/index.html">Caricamenti</a>
+                    <a href="/static/leads.html">KPI Leads</a>
+                    <a href="/static/spend.html">Spese</a>
+                    <a href="/static/budgets.html" class="active">Budget</a>
+                    <a href="/static/chat.html">Chat</a>
+                </div>
+            </div>
+        </nav>
+
+        <main>
+            <div class="container">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+                    <div>
+                        <h1 style="margin-bottom:.35rem;">Budget mensili</h1>
+                        <p>Pianifica il budget marketing per fonte e confrontalo con il consuntivo.</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="openModal()">+ Nuovo budget</button>
+                </div>
+
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab('budgets')">Budget</button>
+                    <button class="tab-btn" onclick="switchTab('report')">Budget vs consuntivo</button>
+                </div>
+
+                <div id="tab-budgets" class="tab-pane active">
+                    <div style="display:flex;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center;">
+                        <input type="number" id="filter-year" placeholder="Anno" style="width:90px;padding:6px 10px;font-size:.85rem;" />
+                        <select id="filter-month" style="padding:6px 10px;font-size:.85rem;"></select>
+                        <button class="btn btn-ghost" onclick="loadBudgets()">Filtra</button>
+                    </div>
+
+                    <div class="card">
+                        <div class="table-wrap">
+                            <table>
+                                <thead><tr><th>Fonte</th><th>Periodo</th><th>Budget pianificato</th><th></th></tr></thead>
+                                <tbody id="budget-tbody"><tr><td colspan="4" class="empty-state">Caricamento...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-report" class="tab-pane">
+                    <div style="display:flex;gap:1rem;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;">
+                        <div class="month-picker">
+                            <label class="stat-label">Anno</label>
+                            <input type="number" id="kpi-year" style="width:90px;" />
+                            <label class="stat-label">Mese</label>
+                            <select id="kpi-month"></select>
+                        </div>
+                        <div>
+                            <label class="stat-label">Stati vincenti</label>
+                            <input type="text" id="kpi-winning" value="LAVORATA,CHIUSA" style="width:180px;padding:6px 10px;font-size:.85rem;" />
+                        </div>
+                        <button class="btn btn-primary" onclick="loadReport()">Carica report</button>
+                    </div>
+
+                    <div id="report-note" style="display:none;" class="card"></div>
+
+                    <div class="card">
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr><th>Fonte</th><th>Pianificato</th><th>Actual</th><th>Utilizzo %</th><th>Lead aperti</th><th>Lead vincenti</th><th>CPL Actual</th><th>CPL Target</th><th>Costo/Lead vincente</th><th>Stato</th></tr>
+                                </thead>
+                                <tbody id="report-tbody"><tr><td colspan="10" class="empty-state">Seleziona anno e mese e clicca Carica report.</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <p style="font-size:.75rem;color:var(--text-muted);margin-top:.75rem;">I lead vincenti usano <code>closed_at</code> quando disponibile, altrimenti <code>updated_at</code>.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="budget-modal">
+        <div class="modal-box" style="max-width:460px;">
+            <h3 id="modal-title">Nuovo budget mensile</h3>
+            <form id="budget-form" onsubmit="saveBudget(event)">
+                <input type="hidden" id="bud-id" />
+                <div style="margin-bottom:1rem;">
+                    <label class="stat-label" style="display:block;margin-bottom:.4rem;">Fonte</label>
+                    <select id="bud-source" required><option value="">Caricamento fonti...</option></select>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                    <div><label class="stat-label" style="display:block;margin-bottom:.4rem;">Anno</label><input type="number" id="bud-year" required min="2020" max="2035" /></div>
+                    <div><label class="stat-label" style="display:block;margin-bottom:.4rem;">Mese</label><select id="bud-month" required></select></div>
+                </div>
+                <div style="margin-bottom:1.5rem;">
+                    <label class="stat-label" style="display:block;margin-bottom:.4rem;">Budget pianificato (€)</label>
+                    <input type="number" step="0.01" id="bud-amount" required placeholder="5000.00" />
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-ghost" onclick="closeModal()">Annulla</button>
+                    <button type="submit" class="btn btn-primary">Salva budget</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="modal-box">
+            <h3>Conferma eliminazione</h3>
+            <p id="confirm-modal-msg">Sei sicuro?</p>
+            <div class="modal-actions">
+                <button class="btn btn-ghost" id="confirm-no">Annulla</button>
+                <button class="btn btn-danger" id="confirm-yes">Elimina</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+    <script src="/static/app.js"></script>
+    <script>
+        const MONTHS = ["", "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
+        let allBudgets = [];
+
+        function monthOptions() {
+            return MONTHS.map((m, i) => i === 0 ? '' : `<option value="${i}">${m}</option>`).join('');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('filter-month').innerHTML = `<option value="">Tutti i mesi</option>${monthOptions()}`;
+            document.getElementById('kpi-month').innerHTML = monthOptions();
+            document.getElementById('bud-month').innerHTML = monthOptions();
+            const now = new Date();
+            document.getElementById('filter-year').value = now.getFullYear();
+            document.getElementById('kpi-year').value = now.getFullYear();
+            document.getElementById('kpi-month').value = now.getMonth() + 1;
+            document.getElementById('bud-year').value = now.getFullYear();
+            document.getElementById('bud-month').value = now.getMonth() + 1;
+            loadSourceOptions();
+            loadBudgets();
+        });
+
+        async function loadSourceOptions() {
+            const sel = document.getElementById('bud-source');
+            try {
+                const data = await apiFetch('/api/leads/sources');
+                const sources = data.sources || [];
+                sel.innerHTML = sources.length ? sources.map(s => `<option value="${s}">${s}</option>`).join('') : '<option value="">Nessuna fonte disponibile</option>';
+            } catch {
+                sel.innerHTML = '<option value="">Errore caricamento fonti</option>';
+            }
+        }
+
+        function switchTab(name) {
+            document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', ['budgets', 'report'][i] === name));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            document.getElementById('tab-' + name).classList.add('active');
+        }
+
+        async function loadBudgets() {
+            const year = document.getElementById('filter-year').value;
+            const month = document.getElementById('filter-month').value;
+            let url = '/api/budgets';
+            const params = [];
+            if (year) params.push(`year=${year}`);
+            if (month) params.push(`month=${month}`);
+            if (params.length) url += '?' + params.join('&');
+            const tbody = document.getElementById('budget-tbody');
+            try {
+                allBudgets = await apiFetch(url);
+                if (!allBudgets.length) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Nessun budget disponibile.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = allBudgets.map(b => `
+                    <tr>
+                      <td><span class="badge badge-info">${b.source}</span></td>
+                      <td>${MONTHS[b.month]} ${b.year}</td>
+                      <td style="font-weight:700;">${formatEur(b.planned_budget)}</td>
+                      <td>
+                        <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+                          <button class="btn btn-ghost" style="padding:4px 8px;font-size:.8rem;" onclick="editBudget(${b.id})">Modifica</button>
+                          <button class="btn btn-danger" style="padding:4px 8px;font-size:.8rem;" onclick="deleteBudget(${b.id})">Elimina</button>
+                        </div>
+                      </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Errore: ${e.message}</td></tr>`;
+            }
+        }
+
+        async function loadReport() {
+            const year = document.getElementById('kpi-year').value;
+            const month = document.getElementById('kpi-month').value;
+            const winning = document.getElementById('kpi-winning').value;
+            if (!year || !month) { showToast('Seleziona anno e mese', 'error'); return; }
+            const tbody = document.getElementById('report-tbody');
+            tbody.innerHTML = '<tr><td colspan="10" class="empty-state">Caricamento...</td></tr>';
+            try {
+                const data = await apiFetch(`/api/budgets/kpis/report?year=${year}&month=${month}&winning=${encodeURIComponent(winning)}`);
+                const noteEl = document.getElementById('report-note');
+                noteEl.style.display = 'block';
+                noteEl.innerHTML = `<strong>Nota:</strong> ${data.note_winning_date}`;
+                if (!data.rows || !data.rows.length) {
+                    tbody.innerHTML = '<tr><td colspan="10" class="empty-state">Nessun dato per il periodo selezionato.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = data.rows.map(r => {
+                    const util = r.utilization_pct;
+                    const fillColor = util == null ? '#6b7280' : util > 100 ? '#ef4444' : util < 50 ? '#f59e0b' : '#22c55e';
+                    const statusBadge = r.alert_overspending
+                        ? '<span class="kpi-badge badge-over">Fuori budget</span>'
+                        : r.alert_underperforming
+                            ? '<span class="kpi-badge badge-under">Sotto performance</span>'
+                            : r.planned_budget > 0
+                                ? '<span class="kpi-badge badge-ok">In linea</span>'
+                                : '';
+                    const fmt = v => v != null ? formatEur(v) : '-';
+                    const fmtN = v => v != null ? Number(v).toFixed(1) + '%' : '-';
+                    return `<tr>
+                      <td><strong>${r.source}</strong></td>
+                      <td>${fmt(r.planned_budget)}</td>
+                      <td>${fmt(r.actual_spend)}</td>
+                      <td>${fmtN(r.utilization_pct)}<div class="util-bar"><div class="util-fill" style="width:${Math.min(util || 0, 150)}%;background:${fillColor};"></div></div></td>
+                      <td style="text-align:center;">${r.leads_opened}</td>
+                      <td style="text-align:center;">${r.winning_leads}<span style="font-size:.7rem;color:var(--text-muted);">(${r.winning_leads_date_field || 'n/d'})</span></td>
+                      <td>${fmt(r.cpl_actual)}</td>
+                      <td>${fmt(r.cpl_target)}</td>
+                      <td>${fmt(r.cost_per_winning)}</td>
+                      <td>${statusBadge}</td>
+                    </tr>`;
+                }).join('');
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="10" class="empty-state">Errore: ${e.message}</td></tr>`;
+            }
+        }
+
+        function openModal(b = null) {
+            document.getElementById('budget-modal').classList.add('open');
+            if (b) {
+                document.getElementById('modal-title').textContent = 'Modifica budget';
+                document.getElementById('bud-id').value = b.id;
+                const sourceSelect = document.getElementById('bud-source');
+                if (![...sourceSelect.options].some(o => o.value === b.source)) {
+                    const opt = document.createElement('option');
+                    opt.value = b.source;
+                    opt.textContent = b.source;
+                    sourceSelect.appendChild(opt);
+                }
+                document.getElementById('bud-source').value = b.source;
+                document.getElementById('bud-year').value = b.year;
+                document.getElementById('bud-month').value = b.month;
+                document.getElementById('bud-amount').value = b.planned_budget;
+            } else {
+                document.getElementById('modal-title').textContent = 'Nuovo budget mensile';
+                document.getElementById('budget-form').reset();
+                document.getElementById('bud-id').value = '';
+                const now = new Date();
+                document.getElementById('bud-year').value = now.getFullYear();
+                document.getElementById('bud-month').value = now.getMonth() + 1;
+            }
+        }
+
+        function closeModal() { document.getElementById('budget-modal').classList.remove('open'); }
+        function editBudget(id) { const b = allBudgets.find(x => x.id === id); if (b) openModal(b); }
+
+        function deleteBudget(id) {
+            confirmModal('Eliminare questo budget?', async () => {
+                try {
+                    await apiFetch(`/api/budgets/${id}`, { method: 'DELETE' });
+                    showToast('Budget eliminato', 'success');
+                    loadBudgets();
+                } catch (e) {
+                    showToast('Eliminazione non riuscita: ' + e.message, 'error');
+                }
+            });
+        }
+
+        async function saveBudget(e) {
+            e.preventDefault();
+            const id = document.getElementById('bud-id').value;
+            const body = {
+                campaign_name: '',
+                source: document.getElementById('bud-source').value,
+                year: parseInt(document.getElementById('bud-year').value),
+                month: parseInt(document.getElementById('bud-month').value),
+                planned_budget: parseFloat(document.getElementById('bud-amount').value),
+            };
+            try {
+                if (id) {
+                    await apiFetch(`/api/budgets/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                } else {
+                    await apiFetch('/api/budgets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                }
+                showToast('Budget salvato', 'success');
+                closeModal();
+                loadBudgets();
+            } catch (err) {
+                showToast('Errore: ' + err.message, 'error');
+            }
+        }
+    </script>
+</body>
+
+</html>

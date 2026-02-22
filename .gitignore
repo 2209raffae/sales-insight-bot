@@ -1,0 +1,13 @@
+
+# env
+.env
+*.env
+.env.*
+app.db
+__pycache__/
+.venv/
+
+
+# secrets
+.env
+

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Lead &amp; Spend Copilot - Caricamenti</title>
+  <meta name="description" content="Carica CSV leads e spese per alimentare il copilot analytics." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+
+<body>
+  <div class="page-wrapper">
+    <nav>
+      <div class="nav-inner">
+        <span class="nav-brand">Lead &amp; Spend Copilot</span>
+        <div class="nav-links">
+          <a href="/static/index.html" class="active">Caricamenti</a>
+          <a href="/static/leads.html">KPI Leads</a>
+          <a href="/static/spend.html">Spese</a>
+          <a href="/static/budgets.html">Budget</a>
+          <a href="/static/chat.html">Chat</a>
+        </div>
+      </div>
+    </nav>
+
+    <main>
+      <div class="container">
+        <div style="margin-bottom:1.5rem;">
+          <h1 style="margin-bottom:.35rem;">Caricamento dati</h1>
+          <p>Carica i CSV di leads e spese campagne. Ogni caricamento e tracciato come batch indipendente.</p>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.5rem;" class="upload-grid">
+          <div class="card">
+            <h2 style="margin-bottom:.25rem;">Carica CSV Leads</h2>
+            <p style="margin-bottom:1rem;font-size:.85rem;">Obbligatori: <code>lead_id</code>, <code>status</code></p>
+            <div class="drop-zone" id="lead-drop" style="padding:2rem 1rem;">
+              <p>Trascina qui o fai clic per selezionare</p>
+              <p style="font-size:.8rem;margin-top:.25rem;" id="lead-file-name">Nessun file selezionato</p>
+            </div>
+            <input type="file" id="lead-file-input" accept=".csv" style="display:none" />
+            <div style="display:flex;align-items:center;gap:.75rem;margin-top:.75rem;">
+              <button class="btn btn-primary" id="lead-upload-btn" disabled>
+                <span id="lead-spinner" class="spinner" style="display:none"></span>
+                Carica Leads
+              </button>
+              <span id="leads-status-badge" class="badge badge-warning">Nessun lead</span>
+            </div>
+            <p id="lead-result" style="margin-top:.6rem;font-size:.85rem;color:var(--text-muted);"></p>
+            <p id="leads-status-text" style="font-size:.8rem;margin-top:.35rem;color:var(--text-muted);"></p>
+          </div>
+
+          <div class="card">
+            <h2 style="margin-bottom:.25rem;">Carica CSV Spese</h2>
+            <p style="margin-bottom:1rem;font-size:.85rem;">Obbligatori: <code>date</code>, <code>source</code>, <code>spend</code></p>
+            <div class="drop-zone" id="spend-drop" style="padding:2rem 1rem;">
+              <p>Trascina qui o fai clic per selezionare</p>
+              <p style="font-size:.8rem;margin-top:.25rem;" id="spend-file-name">Nessun file selezionato</p>
+            </div>
+            <input type="file" id="spend-file-input" accept=".csv" style="display:none" />
+            <div style="display:flex;align-items:center;gap:.75rem;margin-top:.75rem;">
+              <button class="btn btn-primary" id="spend-upload-btn" disabled>
+                <span id="spend-spinner" class="spinner" style="display:none"></span>
+                Carica Spese
+              </button>
+              <span id="spend-status-badge" class="badge badge-warning">Nessuna spesa</span>
+            </div>
+            <p id="spend-result" style="margin-top:.6rem;font-size:.85rem;color:var(--text-muted);"></p>
+            <p id="spend-status-text" style="font-size:.8rem;margin-top:.35rem;color:var(--text-muted);"></p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+            <h2 style="margin:0;">Storico caricamenti</h2>
+            <div style="display:flex;gap:.5rem;align-items:center;">
+              <select id="history-filter" class="btn btn-ghost" style="font-size:.85rem;padding:6px 12px;cursor:pointer;">
+                <option value="">Tutti i dataset</option>
+                <option value="leads">Leads</option>
+                <option value="spend">Spese</option>
+              </select>
+              <button class="btn btn-ghost" onclick="loadHistory()" style="font-size:.85rem;">Aggiorna</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table id="history-table">
+              <thead>
+                <tr><th>Dataset</th><th>File</th><th>Caricato il</th><th>Nuovi</th><th>Scartati</th><th>Aggiornati</th><th></th></tr>
+              </thead>
+              <tbody id="history-tbody"><tr><td colspan="7" class="empty-state">Caricamento...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="confirm-modal">
+    <div class="modal-box">
+      <h3>Conferma eliminazione</h3>
+      <p id="confirm-modal-msg">Sei sicuro?</p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="confirm-no">Annulla</button>
+        <button class="btn btn-danger" id="confirm-yes">Elimina</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <script src="/static/app.js"></script>
+  <script>
+    makeUploader({
+      dropZoneId: 'lead-drop', fileInputId: 'lead-file-input',
+      uploadBtnId: 'lead-upload-btn', spinnerId: 'lead-spinner',
+      fileNameId: 'lead-file-name', resultId: 'lead-result',
+      endpoint: '/api/leads/upload',
+      onSuccess: () => { refreshStatus(); loadHistory(); }
+    });
+
+    makeUploader({
+      dropZoneId: 'spend-drop', fileInputId: 'spend-file-input',
+      uploadBtnId: 'spend-upload-btn', spinnerId: 'spend-spinner',
+      fileNameId: 'spend-file-name', resultId: 'spend-result',
+      endpoint: '/api/spend/upload',
+      onSuccess: () => { refreshStatus(); loadHistory(); }
+    });
+
+    function dsLabel(ds) {
+      return ds === 'leads' ? 'Leads' : 'Spese';
+    }
+
+    function fmtDate(iso) {
+      if (!iso) return '-';
+      return new Date(iso).toLocaleString('it-IT');
+    }
+
+    async function loadHistory() {
+      const filter = document.getElementById('history-filter').value;
+      const url = '/api/uploads' + (filter ? `?dataset=${filter}` : '');
+      const tbody = document.getElementById('history-tbody');
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Caricamento...</td></tr>';
+      try {
+        const rows = await apiFetch(url);
+        if (!rows.length) {
+          tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Nessun caricamento disponibile.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = rows.map(r => `
+          <tr>
+            <td><span class="badge ${r.dataset === 'leads' ? 'badge-info' : 'badge-success'}">${dsLabel(r.dataset)}</span></td>
+            <td style="font-size:.85rem;">${r.filename}</td>
+            <td style="font-size:.83rem;color:var(--text-muted);">${fmtDate(r.uploaded_at)}</td>
+            <td style="color:var(--success);">+${r.rows_new}</td>
+            <td style="color:var(--text-muted);">${r.rows_skipped}</td>
+            <td style="color:var(--accent);">${r.rows_updated}</td>
+            <td>
+              <button class="btn btn-danger" style="font-size:.78rem;padding:4px 10px;" onclick="deleteBatch('${r.upload_id}','${r.filename}',${r.rows_new},${r.rows_updated})">Elimina</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Errore nel caricamento storico: ${e.message}</td></tr>`;
+      }
+    }
+
+    function deleteBatch(upload_id, filename, rows_new, rows_updated) {
+      const total = rows_new + rows_updated;
+      confirmModal(`Eliminare il batch "${filename}"? Verranno rimosse definitivamente ${total} righe dal database.`, async () => {
+        try {
+          await apiFetch(`/api/uploads/${upload_id}`, { method: 'DELETE' });
+          showToast('Batch eliminato', 'success');
+          loadHistory();
+          refreshStatus();
+        } catch (e) {
+          showToast(`Eliminazione non riuscita: ${e.message}`, 'error');
+        }
+      });
+    }
+
+    document.getElementById('history-filter').addEventListener('change', loadHistory);
+    refreshStatus();
+    loadHistory();
+  </script>
+  <style>
+    @media(max-width:640px) {
+      .upload-grid { grid-template-columns: 1fr !important; }
+    }
+  </style>
+</body>
+
+</html>
