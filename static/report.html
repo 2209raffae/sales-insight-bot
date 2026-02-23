@@ -78,25 +78,25 @@
 
         <main>
             <div class="container">
-                <div
-                    style="margin-bottom:1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                <div class="top-controls">
                     <div>
                         <h1 style="margin-bottom:.35rem;">Report Generale</h1>
                         <p>Aggregazione di Leads e Spese nel tempo.</p>
                     </div>
-                    <div class="no-print" style="display: flex; gap: .75rem; align-items: center; margin-top: .75rem;">
-                        <select id="specific-period" class="btn btn-ghost" style="padding: 6px 12px; font-size: .9rem;"
-                            onchange="renderTable()" title="Seleziona periodo specifico">
+                    <div class="no-print control-row">
+                        <select id="specific-period" style="padding: 8px 12px; font-size: .9rem; width:150px;"
+                            onchange="renderTable()" title="Seleziona periodo">
                             <option value="">Tutti i periodi</option>
                         </select>
-                        <select id="period-select" class="btn btn-ghost" style="padding: 6px 12px; font-size: .9rem;"
-                            onchange="loadReport()">
+                        <select id="period-select" style="padding: 8px 12px; font-size: .9rem;" onchange="loadReport()">
                             <option value="month">Mensile</option>
                             <option value="quarter">Trimestrale</option>
                             <option value="semester">Semestrale</option>
                         </select>
-                        <button class="btn btn-primary" onclick="loadReport()">Aggiorna</button>
-                        <button class="btn btn-ghost" onclick="window.print()">Stampa</button>
+                        <button class="btn btn-primary" onclick="loadReport()"
+                            style="padding: 8px 16px;">Aggiorna</button>
+                        <button class="btn btn-ghost" onclick="window.print()"
+                            style="padding: 8px 16px;">Stampa</button>
                     </div>
                 </div>
 

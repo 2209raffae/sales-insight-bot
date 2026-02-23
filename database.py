@@ -81,3 +81,26 @@ def run_migrations():
                 conn.commit()
             except Exception:
                 pass
+
+        # upload_batches: add user, mapping_used, reject_reasons if missing
+        cols = _existing_columns(conn, "upload_batches")
+        if "user" not in cols:
+            try:
+                conn.execute(text("ALTER TABLE upload_batches ADD COLUMN user VARCHAR"))
+                conn.commit()
+            except Exception:
+                pass
+        
+        if "mapping_used" not in cols:
+            try:
+                conn.execute(text("ALTER TABLE upload_batches ADD COLUMN mapping_used VARCHAR"))
+                conn.commit()
+            except Exception:
+                pass
+                
+        if "reject_reasons" not in cols:
+            try:
+                conn.execute(text("ALTER TABLE upload_batches ADD COLUMN reject_reasons VARCHAR"))
+                conn.commit()
+            except Exception:
+                pass

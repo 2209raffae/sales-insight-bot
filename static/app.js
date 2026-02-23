@@ -135,6 +135,14 @@ function makeUploader({
 
         const form = new FormData();
         form.append("file", selectedFile);
+
+        // Let the caller inject custom data (like mapping)
+        if (window._currentUploadExtraParams) {
+            for (const [k, v] of Object.entries(window._currentUploadExtraParams)) {
+                form.append(k, v);
+            }
+        }
+
         try {
             const res = await fetch(endpoint, { method: "POST", body: form });
             const raw = await res.text();
@@ -145,10 +153,14 @@ function makeUploader({
                 data = { detail: raw || "Risposta server non valida" };
             }
             if (res.ok) {
-                const msg = `Importati: +${data.rows_new} nuovi, ${data.rows_skipped} scartati, ${data.rows_updated ?? 0} aggiornati`;
+                if (data.status === "needs_mapping") {
+                    if (onSuccess) onSuccess(data, selectedFile);
+                    return;
+                }
+                const msg = `Importati: +${data.rows_new || data.rows_inserted || 0} nuovi, ${data.rows_skipped || 0} scartati, ${data.rows_updated ?? 0} aggiornati`;
                 if (resultEl) resultEl.textContent = msg;
                 showToast("Caricamento completato", "success");
-                if (onSuccess) onSuccess(data);
+                if (onSuccess) onSuccess(data, selectedFile);
             } else {
                 if (resultEl) resultEl.textContent = `${data.detail}`;
                 showToast("Caricamento non riuscito", "error");
@@ -159,6 +171,7 @@ function makeUploader({
         } finally {
             uploadBtn.disabled = false;
             if (spinner) spinner.style.display = "none";
+            window._currentUploadExtraParams = null; // reset
         }
     });
 

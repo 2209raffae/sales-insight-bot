@@ -23,6 +23,9 @@ class UploadBatch(Base):
     rows_new     = Column(Integer, default=0)
     rows_skipped = Column(Integer, default=0)
     rows_updated = Column(Integer, default=0)
+    user         = Column(String, nullable=True)
+    mapping_used = Column(String, nullable=True) # JSON
+    reject_reasons = Column(String, nullable=True) # JSON
 
 
 # ── Lead Records ───────────────────────────────────────────────────────────────
@@ -51,10 +54,10 @@ class LeadRecord(Base):
     status     = Column(String, index=True)
 
 
-# ── Campaign Spend ─────────────────────────────────────────────────────────────
+# ── Campaign Spend (Imported) ──────────────────────────────────────────────────
 
 class CampaignSpend(Base):
-    """One row per actual campaign spend entry (imported via CSV or entered manually)."""
+    """One row per imported campaign spend entry (imported via CSV)."""
     __tablename__ = "campaign_spends"
 
     id                = Column(Integer, primary_key=True, index=True)
@@ -63,8 +66,27 @@ class CampaignSpend(Base):
     source_normalized = Column(String, index=True)   # UPPER-stripped, matches leads.source
     campaign          = Column(String)
     spend             = Column(Float, nullable=False)
-    entry_type        = Column(String, default="csv")   # "csv" | "manual"
+    entry_type        = Column(String, default="csv")   # "csv" keeps backward compat
     note              = Column(String, nullable=True)
+
+
+# ── Actual Spend (Manual) ──────────────────────────────────────────────────────
+
+class ActualSpend(Base):
+    """Manually entered actual spend per period."""
+    __tablename__ = "actual_spends"
+
+    id           = Column(Integer, primary_key=True, index=True)
+    source       = Column(String, nullable=False, index=True)  # Normalized UPPER
+    period_type  = Column(String, nullable=False)              # "week" | "month" | "quarter"
+    period_value = Column(String, nullable=False)              # e.g. "2023-W01", "2023-01", "2023-Q1"
+    amount       = Column(Float, nullable=False)
+    note         = Column(String, nullable=True)
+    created_at   = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("source", "period_type", "period_value", name="uq_actual_spend"),
+    )
 
 
 # ── Campaign Monthly Budget ─────────────────────────────────────────────────────

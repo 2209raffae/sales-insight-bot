@@ -8,10 +8,10 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.staticfiles import StaticFiles
 from database import engine, run_migrations
-from models import Base, LeadRecord, CampaignSpend, UploadBatch, CampaignMonthlyBudget  # noqa: F401
+from models import Base, LeadRecord, CampaignSpend, UploadBatch, CampaignMonthlyBudget, ActualSpend  # noqa: F401
 
 from routers import leads_upload, leads_kpi, chat
-from routers import spend_upload, spend_kpi, uploads, budgets, manual_spend, report
+from routers import spend_upload, spend_kpi, spend_advanced, uploads, budgets, manual_spend, report
 
 app = FastAPI(
     title="AI Lead & Spend Analytics Copilot",
@@ -65,6 +65,7 @@ app.include_router(leads_upload.router)
 app.include_router(leads_kpi.router)
 app.include_router(spend_upload.router)
 app.include_router(spend_kpi.router)
+app.include_router(spend_advanced.router)
 app.include_router(uploads.router)
 app.include_router(budgets.router)
 app.include_router(manual_spend.router)

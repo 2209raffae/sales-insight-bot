@@ -28,22 +28,13 @@ def _month_bounds(year: int, month: int) -> tuple[datetime, datetime]:
     return datetime(year, month, 1), datetime(year, month, last_day, 23, 59, 59)
 
 
+from actual_spend_service import get_true_spend_df
+
 def _actual_spend_df(db: Session, year: int, month: int) -> pd.DataFrame:
-    """Load actual spend for the month from campaign_spends."""
+    """Load actual spend for the month (priority: actual over imported)."""
     start, end = _month_bounds(year, month)
-    rows = db.execute(
-        text("""
-            SELECT source_normalized AS source, campaign, SUM(spend) AS spend
-            FROM campaign_spends
-            WHERE date >= :start AND date <= :end
-            GROUP BY source_normalized, campaign
-        """),
-        {"start": start, "end": end},
-    ).fetchall()
-    if not rows:
-        return pd.DataFrame(columns=["source", "campaign", "spend"])
-    df = pd.DataFrame(rows, columns=["source", "campaign", "spend"])
-    df["spend"] = pd.to_numeric(df["spend"], errors="coerce").fillna(0)
+    # the engine expects dataframe with 'source' and 'spend'
+    df = get_true_spend_df(db, start.date(), end.date(), mode="both")
     return df
 
 

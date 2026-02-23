@@ -29,18 +29,17 @@
 
     <main>
       <div class="container">
-        <div
-          style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
+        <div class="top-controls">
           <div>
             <h1 style="margin-bottom:.35rem;">Dashboard Leads</h1>
-            <p>Metriche deterministiche: nessuna AI nei calcoli KPI.</p>
+            <p>Metriche deterministiche: calcoli KPI su base stati CRM.</p>
           </div>
-          <div style="display:flex;gap:.75rem;align-items:center;">
+          <div class="control-row">
             <label style="font-size:.85rem;color:var(--text-muted);">Soglia inattivita:</label>
             <input type="number" id="stale-days" value="3" min="0" max="30"
-              style="width:70px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);" />
+              style="width:70px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);" />
             <span style="font-size:.85rem;color:var(--text-muted);">giorni</span>
-            <button class="btn btn-primary" onclick="loadAll()">Aggiorna</button>
+            <button class="btn btn-primary" onclick="loadAll()" style="padding: 8px 16px;">Aggiorna</button>
           </div>
         </div>
 

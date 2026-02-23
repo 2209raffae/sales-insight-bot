@@ -89,3 +89,46 @@ Usa solo i dati presenti nel JSON.
     )
 
     return response.choices[0].message.content or "Nessuna risposta disponibile."
+
+
+def forecast_trend(
+    trend_data: list[dict],
+    model: str | None = None,
+) -> str:
+    """
+    Send monthly trend data to the LLM to forecast the next month.
+    """
+    client = _get_client()
+    model = model or os.getenv("MODEL", "llama-3.1-8b-instant")
+
+    context = f"""
+Ecco i dati storici del trend mensile (Spesa totale, Numero di Lead, CPL medio):
+
+```json
+{json.dumps(trend_data, indent=2, default=str)}
+```
+
+In base a questi dati aggregati, genera una BREVE e SPECIFICA previsione per il prossimo mese.
+Considera la direzionalita dei costi (CPL sta aumentando?), del volume di lead e della spesa totale.
+
+Formato di risposta (Usa Markdown, niente preamboli, vai dritto al punto):
+1) **Analisi del Trend** (Cosa e successo recentemente)
+2) **Previsione Stimata Prossimo Mese** (Stima numeri di spesa, lead e CPL)
+3) **Suggerimenti di ottimizzazione** (Come migliorare il CPL o il volume)
+
+Sii professionale ma conciso. Usa l'italiano. Se ci sono pochi dati (es. solo 1 mese), indicalo e fai le proiezioni con cautela.
+"""
+
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "Sei un Data Analyst senior esperto in performance marketing previsivo."},
+                {"role": "user", "content": context},
+            ],
+            temperature=0.3,
+            max_tokens=600,
+        )
+        return response.choices[0].message.content or "Nessuna previsione generata."
+    except Exception as e:
+        return f"Errore durante la generazione della previsione AI: {str(e)}"

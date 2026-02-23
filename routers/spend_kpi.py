@@ -40,7 +40,7 @@ def sanitize_for_json(obj):
 def spend_by_source(
     from_date: str | None = Query(None, alias="from", description="YYYY-MM-DD"),
     to_date: str | None = Query(None, alias="to", description="YYYY-MM-DD"),
-    mode: str = Query("actual", description="actual | planned | both"),
+    mode: str = Query("both", description="actual | imported | both"),
     db: Session = Depends(get_db),
 ):
     return ske.kpi_spend_by_source(db, from_date, to_date, mode=mode)
@@ -50,7 +50,7 @@ def spend_by_source(
 def cost_per_lead(
     from_date: str | None = Query(None, alias="from"),
     to_date: str | None = Query(None, alias="to"),
-    mode: str = Query("actual"),
+    mode: str = Query("both", description="actual | imported | both"),
     db: Session = Depends(get_db),
 ):
     return ske.kpi_cpl_by_source(db, from_date, to_date, mode=mode)
@@ -61,7 +61,7 @@ def cost_per_winning(
     from_date: str | None = Query(None, alias="from"),
     to_date: str | None = Query(None, alias="to"),
     winning: str = Query("LAVORATA,CHIUSA"),
-    mode: str = Query("actual"),
+    mode: str = Query("both", description="actual | imported | both"),
     db: Session = Depends(get_db),
 ):
     return ske.kpi_cost_per_winning(db, from_date, to_date, _winning_set(winning), mode=mode)
@@ -72,7 +72,7 @@ def overspending_alerts(
     from_date: str | None = Query(None, alias="from"),
     to_date: str | None = Query(None, alias="to"),
     winning: str = Query("LAVORATA,CHIUSA"),
-    mode: str = Query("actual"),
+    mode: str = Query("both", description="actual | imported | both"),
     db: Session = Depends(get_db),
 ):
     return ske.kpi_overspending_alerts(
@@ -82,10 +82,12 @@ def overspending_alerts(
 
 @router.get("/trend")
 def monthly_trend(
-    mode: str = Query("actual"),
+    mode: str = Query("both", description="actual | imported | both"),
+    from_date: str | None = Query(None, alias="from"),
+    to_date: str | None = Query(None, alias="to"),
     db: Session = Depends(get_db),
 ):
-    return ske.kpi_monthly_spend_trend(db, mode=mode)
+    return ske.kpi_monthly_spend_trend(db, mode, from_date, to_date)
 
 
 @router.get("/summary")
@@ -93,7 +95,7 @@ def spend_summary(
     from_date: str | None = Query(None, alias="from"),
     to_date: str | None = Query(None, alias="to"),
     winning: str = Query("LAVORATA,CHIUSA"),
-    mode: str = Query("actual"),
+    mode: str = Query("both", description="actual | imported | both"),
     db: Session = Depends(get_db),
 ):
     debug = ske.debug_spend_inputs(db, from_date, to_date, mode)

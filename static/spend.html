@@ -5,8 +5,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Lead &amp; Spend Copilot - KPI Spese</title>
-    <meta name="description"
-        content="Analisi spese marketing: CPL, costo per lead vincente, pianificato vs actual e alert di sforamento." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/static/style.css" />
@@ -83,48 +81,55 @@
                 </div>
             </div>
         </nav>
-
         <main>
             <div class="container">
-                <div
-                    style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+                <div class="top-controls">
                     <div>
                         <h1 style="margin-bottom:.35rem;">KPI Spese</h1>
-                        <p>Efficienza delle spese marketing: CPL, costo per lead vincente, pianificato vs actual e alert
-                            di sforamento.</p>
+                        <p>Efficienza delle spese marketing: CPL, costo per lead vincente e alert.</p>
                     </div>
-                    <div style="display:flex;flex-direction:column;gap:.6rem;align-items:flex-end;">
-                        <div class="date-range-row">
-                            <label>Dal</label>
-                            <input type="date" id="date-start" />
-                            <label>Al</label>
-                            <input type="date" id="date-end" />
-                            <button class="btn btn-primary" onclick="refreshAll()" id="refresh-btn">
-                                <span id="refresh-spinner" class="spinner" style="display:none"></span>
-                                Applica
-                            </button>
+
+                    <div
+                        style="display:flex; flex-direction:column; gap:1rem; align-items:flex-end; width:100%; max-width:600px;">
+                        <div class="control-row" style="width:100%; justify-content:flex-end;">
+                            <div class="date-range-row">
+                                <label>Dal</label>
+                                <input type="date" id="date-start" />
+                                <label>Al</label>
+                                <input type="date" id="date-end" />
+                                <button class="btn btn-primary" onclick="refreshAll()" id="refresh-btn">
+                                    <span id="refresh-spinner" class="spinner" style="display:none"></span> Applica
+                                </button>
+                            </div>
                         </div>
-                        <div style="font-size:.8rem;color:var(--text-muted);">
-                            Stati vincenti:
-                            <input type="text" id="winning-input" value="LAVORATA,CHIUSA"
-                                style="width:180px;padding:4px 8px;font-size:.8rem;display:inline-block;" />
-                        </div>
-                        <div class="mode-toggle">
-                            <span
-                                style="font-size:.8rem;color:var(--text-muted);font-weight:600;margin-right:2px;">Modalita:</span>
-                            <label><input type="radio" name="spend-mode" value="actual" checked
-                                    onchange="refreshAll()"><span>Actual (CSV + Manuale)</span></label>
-                            <label><input type="radio" name="spend-mode" value="planned"
-                                    onchange="refreshAll()"><span>Planned (Budget)</span></label>
-                            <label><input type="radio" name="spend-mode" value="both"
-                                    onchange="refreshAll()"><span>Entrambi</span></label>
+
+                        <div class="control-row" style="width:100%; justify-content:flex-end;">
+                            <div
+                                style="font-size:.8rem;color:var(--text-muted);display:flex;align-items:center;gap:0.3rem;">
+                                Stati vincenti:
+                                <input type="text" id="winning-input" value="LAVORATA,CHIUSA"
+                                    style="width:140px;padding:4px 8px;font-size:.8rem;" />
+                            </div>
+                            <div class="mode-toggle">
+                                <label><input type="radio" name="spend-mode" value="imported"
+                                        onchange="refreshAll()"><span>CSV</span></label>
+                                <label><input type="radio" name="spend-mode" value="actual"
+                                        onchange="refreshAll()"><span>Manuale</span></label>
+                                <label><input type="radio" name="spend-mode" value="both" checked
+                                        onchange="refreshAll()"><span>Entrambi</span></label>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="stats-grid" id="summary-stats" style="margin-bottom:1.5rem;">
                     <div class="stat-card">
-                        <div class="stat-label">Spesa totale</div>
+                        <div class="stat-label" style="display:flex;justify-content:space-between;align-items:center;">
+                            Spesa totale
+                            <button onclick="openExplainModal()"
+                                style="background:none;border:none;color:var(--accent);font-size:0.75rem;cursor:pointer;text-decoration:underline;">🔍
+                                Perché?</button>
+                        </div>
                         <div class="stat-value" id="stat-total-spend">-</div>
                     </div>
                     <div class="stat-card">
@@ -159,14 +164,12 @@
                         <div class="empty-state">Caricamento...</div>
                     </div>
                 </div>
-
                 <div class="tab-panel card" id="panel-cpl">
                     <h3 class="section-title">Costo per lead (CPL) per fonte</h3>
                     <div id="cpl-content">
                         <div class="empty-state">Caricamento...</div>
                     </div>
                 </div>
-
                 <div class="tab-panel card" id="panel-cost-winning">
                     <h3 class="section-title">Costo per lead vincente per fonte</h3>
                     <p style="font-size:.85rem;margin-bottom:1rem;">Vincente = stato incluso nell'elenco configurato
@@ -175,7 +178,6 @@
                         <div class="empty-state">Caricamento...</div>
                     </div>
                 </div>
-
                 <div class="tab-panel card" id="panel-alerts">
                     <h3 class="section-title">Alert sforamento</h3>
                     <p style="font-size:.85rem;margin-bottom:1rem;">Fonti in cui il costo per lead vincente supera 2x la
@@ -184,19 +186,27 @@
                         <div class="empty-state">Caricamento...</div>
                     </div>
                 </div>
-
                 <div class="tab-panel card" id="panel-trend">
                     <h3 class="section-title">Trend mensile spese + CPL</h3>
                     <div id="trend-content">
                         <div class="empty-state">Caricamento...</div>
                     </div>
-                </div>
 
+                    <div style="margin-top:1.5rem;text-align:right;">
+                        <button class="btn btn-secondary" onclick="generateForecast()" id="btn-forecast">
+                            <span class="spinner" id="forecast-spinner" style="display:none"></span> Genera Previsione
+                            AI
+                        </button>
+                    </div>
+                    <div id="forecast-content"
+                        style="margin-top:1rem;display:none;background:var(--surface-2);padding:1.5rem;border-radius:10px;font-size:0.95rem;line-height:1.6;border:1px solid var(--border);">
+                    </div>
+                </div>
                 <div class="tab-panel card" id="panel-manual">
                     <h3 class="section-title">Voci manuali di spesa actual</h3>
                     <p style="font-size:.85rem;margin-bottom:1.2rem;color:var(--text-muted);">
-                        Registra spese actual non presenti nei CSV. Queste voci rientrano in tutte le metriche come
-                        <strong>actual</strong>.
+                        Registra spese actual per un periodo specifico. Se impostata la modalità "Entrambi", queste voci
+                        sovrascrivono l'import CSV per il periodo specificato.
                     </p>
 
                     <div
@@ -204,15 +214,22 @@
                         <h4 style="margin-bottom:1rem;" id="manual-form-title">Nuova voce manuale</h4>
                         <input type="hidden" id="m-edit-id" />
                         <div class="manual-form">
-                            <div class="field"><label>Data</label><input type="date" id="m-date" /></div>
                             <div class="field">
                                 <label>Fonte</label>
                                 <select id="m-source">
                                     <option value="">Caricamento fonti...</option>
                                 </select>
                             </div>
-                            <div class="field"><label>Campagna (opzionale)</label><input type="text" id="m-campaign"
-                                    placeholder="es. Promo Primavera" /></div>
+                            <div class="field">
+                                <label>Tipo Periodo</label>
+                                <select id="m-period-type" onchange="updatePeriodInput()">
+                                    <option value="week">Settimana Server (Es. 2023-W01)</option>
+                                    <option value="month" selected>Mese (Es. 2023-01)</option>
+                                    <option value="quarter">Trimestre (Es. 2023-Q1)</option>
+                                </select>
+                            </div>
+                            <div class="field"><label>Valore</label><input type="text" id="m-period-value"
+                                    placeholder="2023-01" /></div>
                             <div class="field"><label>Spesa (€)</label><input type="number" step="0.01" id="m-spend"
                                     placeholder="1500.00" /></div>
                         </div>
@@ -234,9 +251,8 @@
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Data</th>
+                                    <th>Periodo</th>
                                     <th>Fonte</th>
-                                    <th>Campagna</th>
                                     <th>Spesa</th>
                                     <th>Nota</th>
                                     <th></th>
@@ -244,7 +260,7 @@
                             </thead>
                             <tbody id="manual-tbody">
                                 <tr>
-                                    <td colspan="6" class="empty-state">Caricamento...</td>
+                                    <td colspan="5" class="empty-state">Caricamento...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -265,6 +281,45 @@
         </div>
     </div>
 
+    <!-- Explain Modal -->
+    <div class="modal-overlay" id="explain-modal">
+        <div class="modal-box" style="max-width:600px;">
+            <h3>Spiegazione Variazione KPI (Spesa Totale)</h3>
+            <div id="explain-content" style="margin-top:1rem; font-size:0.9rem;">
+                Caricamento...
+            </div>
+            <div class="modal-actions" style="margin-top: 1.5rem;">
+                <button class="btn btn-primary"
+                    onclick="document.getElementById('explain-modal').classList.remove('open')">Chiudi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Drilldown Modal -->
+    <div class="modal-overlay" id="drilldown-modal">
+        <div class="modal-box" style="max-width:600px;">
+            <h3 id="drilldown-title">Dettaglio</h3>
+            <div style="margin:1rem 0; display:flex; gap:0.5rem; justify-content:flex-end;">
+                <select id="drilldown-granularity" onchange="fetchDrilldown()" style="padding:4px; font-size:0.8rem;">
+                    <option value="day">Giornaliero</option>
+                    <option value="week">Settimanale</option>
+                    <option value="month" selected>Mensile</option>
+                </select>
+                <select id="drilldown-groupby" onchange="fetchDrilldown()" style="padding:4px; font-size:0.8rem;">
+                    <option value="source">Per Fonte</option>
+                    <option value="campaign" selected>Per Campagna</option>
+                </select>
+            </div>
+            <div id="drilldown-content" style="max-height: 400px; overflow-y: auto;">
+                Caricamento...
+            </div>
+            <div class="modal-actions" style="margin-top: 1.5rem;">
+                <button class="btn btn-primary"
+                    onclick="document.getElementById('drilldown-modal').classList.remove('open')">Chiudi</button>
+            </div>
+        </div>
+    </div>
+
     <div id="toast"></div>
     <script src="/static/app.js"></script>
     <script>
@@ -274,6 +329,14 @@
             document.getElementById('panel-' + name).classList.add('active');
             btn.classList.add('active');
             if (name === 'manual') loadManualEntries();
+        }
+
+        function updatePeriodInput() {
+            const pt = document.getElementById('m-period-type').value;
+            const input = document.getElementById('m-period-value');
+            if (pt === 'week') input.placeholder = 'YYYY-Wxx (es. 2023-W01)';
+            else if (pt === 'month') input.placeholder = 'YYYY-MM (es. 2023-01)';
+            else if (pt === 'quarter') input.placeholder = 'YYYY-Qx (es. 2023-Q1)';
         }
 
         function qp() {
@@ -289,17 +352,14 @@
             return p.length ? '?' + p.join('&') : '';
         }
 
-        function fmt(v) {
-            if (v === null || v === undefined || isNaN(v)) return '-';
-            return formatEur(v);
-        }
+        function fmt(v) { return (v === null || v === undefined || isNaN(v)) ? '-' : formatEur(v); }
 
         function barRows(rows, labelKey, valueKey) {
             if (!rows || !rows.length) return '<div class="empty-state">Nessun dato.</div>';
             const max = Math.max(...rows.map(r => r[valueKey] || 0));
             return rows.map(r => {
                 const pct = max > 0 ? ((r[valueKey] || 0) / max * 100) : 0;
-                return `<div class="bar-row">
+                return `<div class="bar-row" style="cursor:pointer;" onclick="openDrilldownModal('${r[labelKey]}')" title="Clicca per drill-down di questa fonte">
                     <div class="bar-label">${r[labelKey] || '-'}</div>
                     <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
                     <div class="bar-value">${fmt(r[valueKey])}</div>
@@ -307,18 +367,94 @@
             }).join('');
         }
 
+        async function openExplainModal() {
+            const modal = document.getElementById('explain-modal');
+            const content = document.getElementById('explain-content');
+            modal.classList.add('open');
+            content.innerHTML = '<span class="spinner" style="display:inline-block"></span> Caricamento spiegazione...';
+            try {
+                const res = await apiFetch('/api/advanced/explain' + qp());
+                let html = `<p>Spesa periodo corrente: <strong>${formatEur(res.current_period.spend)}</strong><br>Spesa periodo precedente: <strong>${formatEur(res.previous_period.spend)}</strong></p>`;
+                const color = res.delta > 0 ? 'var(--danger)' : 'var(--success)';
+                const sign = res.delta > 0 ? '+' : '';
+                html += `<p style="font-size:1.1rem">Variazione: <span style="color:${color};font-weight:700;">${sign}${formatEur(res.delta)} (${sign}${res.delta_pct}%)</span></p>`;
+
+                if (res.drivers && res.drivers.length > 0) {
+                    html += `<h4 style="margin-top:1rem;margin-bottom:0.5rem">Top Driver Variazione (Per fonte)</h4><ul>`;
+                    for (let d of res.drivers) {
+                        const dsign = d.impact > 0 ? '+' : '';
+                        html += `<li><strong>${d.source}</strong>: ${dsign}${formatEur(d.impact)}</li>`;
+                    }
+                    html += `</ul>`;
+                }
+
+                if (res.notes && res.notes.length > 0) {
+                    html += `<h4 style="margin-top:1rem;margin-bottom:0.5rem">Note Anomalie Qualità Dati</h4><ul>`;
+                    for (let n of res.notes) {
+                        html += `<li style="color:var(--warning)">${n}</li>`;
+                    }
+                    html += `</ul>`;
+                }
+
+                content.innerHTML = html;
+            } catch (e) {
+                content.innerHTML = `<span style="color:var(--danger)">Errore: ${e.message}</span>`;
+            }
+        }
+
+        let currentDrilldownSource = null;
+        function openDrilldownModal(source) {
+            currentDrilldownSource = source;
+            document.getElementById('drilldown-title').textContent = `Dettaglio Fonte: ${source}`;
+            document.getElementById('drilldown-modal').classList.add('open');
+            fetchDrilldown();
+        }
+
+        async function fetchDrilldown() {
+            if (!currentDrilldownSource) return;
+            const content = document.getElementById('drilldown-content');
+            content.innerHTML = '<div class="empty-state"><span class="spinner" style="display:inline-block"></span> Caricamento drilldown...</div>';
+
+            const gran = document.getElementById('drilldown-granularity').value;
+            let gb = document.getElementById('drilldown-groupby').value;
+
+            // Base query params
+            let p = qp();
+            p += (p ? '&' : '?') + `granularity=${gran}&group_by=${gb}`;
+
+            try {
+                const res = await apiFetch('/api/advanced/drill-down' + p);
+                let rows = res.data || [];
+                if (currentDrilldownSource !== 'ALL') {
+                    rows = rows.filter(r => r.source === currentDrilldownSource);
+                }
+
+                if (!rows.length) {
+                    content.innerHTML = '<div class="empty-state">Nessun dato per drilldown.</div>';
+                    return;
+                }
+
+                const tcols = [
+                    { key: 'period', label: 'Periodo' },
+                    { key: 'source', label: 'Fonte' },
+                ];
+                if (gb === 'campaign') tcols.push({ key: 'campaign', label: 'Campagna' });
+                tcols.push({ key: 'spend', label: 'Spesa (€)', fmt: (v) => formatEur(v) });
+
+                content.innerHTML = tableHtml(rows, tcols);
+
+            } catch (e) {
+                content.innerHTML = `<div class="empty-state" style="color:var(--danger)">Errore: ${e.message}</div>`;
+            }
+        }
+
         let refreshInFlight = false;
 
         function setSummaryError(message) {
             const banner = document.getElementById('summary-error-banner');
             if (!banner) return;
-            if (message) {
-                banner.textContent = message;
-                banner.style.display = 'block';
-            } else {
-                banner.textContent = '';
-                banner.style.display = 'none';
-            }
+            if (message) { banner.textContent = message; banner.style.display = 'block'; }
+            else { banner.textContent = ''; banner.style.display = 'none'; }
         }
 
         function tableHtml(rows, columns) {
@@ -332,13 +468,16 @@
         async function refreshAll() {
             if (refreshInFlight) return;
             refreshInFlight = true;
-
             const spinner = document.getElementById('refresh-spinner');
             spinner.style.display = 'inline-block';
             document.getElementById('refresh-btn').disabled = true;
 
             try {
-                const summary = await apiFetch('/api/kpi/spend/summary' + qp());
+                const summaryP = apiFetch('/api/kpi/spend/summary' + qp());
+                const alertsP = apiFetch('/api/advanced/alerts');
+
+                const [summary, anomalies] = await Promise.all([summaryP, alertsP]);
+
                 setSummaryError('');
 
                 const cplRows = summary.cpl_by_source || [];
@@ -346,10 +485,13 @@
                 const avgCpl = validCpls.length ? validCpls.reduce((a, b) => a + b.cpl, 0) / validCpls.length : null;
                 const best = validCpls.length ? validCpls.reduce((a, b) => a.cpl < b.cpl ? a : b) : null;
 
+                const alertRows = summary.overspending_alerts || [];
+                const anomalyRows = anomalies.alerts || [];
+
                 document.getElementById('stat-total-spend').textContent = fmt(summary.total_spend);
                 document.getElementById('stat-avg-cpl').textContent = avgCpl ? formatEur(avgCpl) : '-';
                 document.getElementById('stat-best-cpl').textContent = best ? `${best.source} (${formatEur(best.cpl)})` : '-';
-                document.getElementById('stat-alerts').textContent = (summary.overspending_alerts || []).length;
+                document.getElementById('stat-alerts').textContent = alertRows.length + anomalyRows.length;
 
                 document.getElementById('by-source-content').innerHTML = barRows(summary.spend_by_source || [], 'source', 'total_spend');
 
@@ -357,38 +499,41 @@
                     { key: 'source', label: 'Fonte' },
                     { key: 'total_spend', label: 'Spesa totale', fmt },
                     { key: 'leads_count', label: 'Lead' },
-                    { key: 'cpl', label: 'CPL', fmt },
+                    { key: 'cpl', label: 'CPL', fmt }
                 ]);
 
                 document.getElementById('cost-winning-content').innerHTML = tableHtml(summary.cost_per_winning_by_source || [], [
                     { key: 'source', label: 'Fonte' },
                     { key: 'total_spend', label: 'Spesa', fmt },
                     { key: 'winning_leads', label: 'Lead vincenti' },
-                    { key: 'cost_per_winning', label: 'Costo/Lead vincente', fmt },
+                    { key: 'cost_per_winning', label: 'Costo/Lead vincente', fmt }
                 ]);
 
-                const alertRows = summary.overspending_alerts || [];
-                if (!alertRows.length) {
-                    document.getElementById('alerts-content').innerHTML = '<div class="empty-state" style="color:var(--success);">Nessun alert di sforamento rilevato.</div>';
+                let alertHtml = '';
+                if (!alertRows.length && !anomalyRows.length) {
+                    alertHtml = '<div class="empty-state" style="color:var(--success);">Nessun alert o anomalia rilevati.</div>';
                 } else {
-                    document.getElementById('alerts-content').innerHTML = alertRows.map(a =>
+                    alertHtml += anomalyRows.map(a => `<div class="alert-strip ${a.severity === 'critic' ? 'alert-high' : 'alert-medium'}">
+                        <strong>[Anomalia API] ${a.source}</strong> - ${a.message}
+                    </div>`).join('');
+                    alertHtml += alertRows.map(a =>
                         `<div class="alert-strip ${a.severity === 'HIGH' ? 'alert-high' : 'alert-medium'}">
                             <strong>${a.source}</strong> - ${a.alert_reason}
                             &nbsp;|&nbsp; Spesa: ${fmt(a.total_spend)} &nbsp;|&nbsp; Vincenti: ${a.winning_leads ?? 0}
                         </div>`
                     ).join('');
                 }
+                document.getElementById('alerts-content').innerHTML = alertHtml;
 
                 document.getElementById('trend-content').innerHTML = tableHtml(summary.monthly_trend || [], [
                     { key: 'month', label: 'Mese' },
                     { key: 'total_spend', label: 'Spesa', fmt },
                     { key: 'leads_count', label: 'Lead' },
-                    { key: 'cpl', label: 'CPL', fmt },
+                    { key: 'cpl', label: 'CPL', fmt }
                 ]);
             } catch (e) {
-                setSummaryError('Errore nel caricamento KPI spese. Controlla filtri/intervallo e riprova manualmente.');
+                setSummaryError('Errore nel caricamento KPI spese. Controlla filtri/intervallo.');
                 showToast('Errore nel caricamento KPI: ' + e.message, 'error');
-                return;
             } finally {
                 refreshInFlight = false;
                 spinner.style.display = 'none';
@@ -405,102 +550,66 @@
                 const sources = data.sources || [];
                 if (sources.length) {
                     sel.innerHTML = sources.map(s => `<option value="${s}">${s}</option>`).join('');
-                } else {
-                    sel.innerHTML = '<option value="">Nessuna fonte trovata - carica prima i leads</option>';
-                }
-            } catch {
-                document.getElementById('m-source').innerHTML = '<option value="">Errore nel caricamento fonti</option>';
-            }
+                } else { sel.innerHTML = '<option value="">Nessun dato (vuoto)</option>'; }
+            } catch { }
         }
 
         async function loadManualEntries() {
             const tbody = document.getElementById('manual-tbody');
             try {
-                const s = document.getElementById('date-start').value;
-                const e = document.getElementById('date-end').value;
-                const q = [];
-                if (s) q.push(`from=${s}`);
-                if (e) q.push(`to=${e}`);
-                manualEntries = await apiFetch('/api/spend/manual' + (q.length ? `?${q.join('&')}` : ''));
-                if (!manualEntries.length) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Nessuna voce manuale disponibile.</td></tr>';
-                    return;
-                }
+                manualEntries = await apiFetch('/api/spend/manual');
+                if (!manualEntries.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Nessuna voce trovata.</td></tr>'; return; }
                 tbody.innerHTML = manualEntries.map(e => `<tr>
-                    <td>${e.date ? new Date(e.date).toLocaleDateString('it-IT') : '-'}</td>
-                    <td><span class="badge badge-info">${e.source_normalized}</span></td>
-                    <td>${e.campaign || '-'}</td>
-                    <td style="font-weight:700;">${formatEur(e.spend)}</td>
+                    <td>${e.period_value} (${e.period_type})</td>
+                    <td><span class="badge badge-info">${e.source}</span></td>
+                    <td style="font-weight:700;">${formatEur(e.amount)}</td>
                     <td style="color:var(--text-muted);font-size:.82rem;">${e.note || '-'}</td>
-                    <td>
-                        <div style="display:flex;gap:.4rem;justify-content:flex-end;">
-                            <button class="btn btn-ghost" style="padding:3px 8px;font-size:.78rem;" onclick="editManualEntry(${e.id})">Modifica</button>
-                            <button class="btn btn-danger" style="padding:3px 8px;font-size:.78rem;" onclick="deleteManualEntry(${e.id})">Elimina</button>
-                        </div>
-                    </td>
+                    <td><div style="display:flex;gap:.4rem;justify-content:flex-end;"><button class="btn btn-ghost" style="padding:3px 8px;font-size:.78rem;" onclick="editManualEntry(${e.id})">Modifica</button><button class="btn btn-danger" style="padding:3px 8px;font-size:.78rem;" onclick="deleteManualEntry(${e.id})">Elimina</button></div></td>
                 </tr>`).join('');
-            } catch (ex) {
-                tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Errore: ${ex.message}</td></tr>`;
-            }
+            } catch (ex) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Errore: ${ex.message}</td></tr>`; }
         }
 
         async function saveManualEntry() {
             const editId = document.getElementById('m-edit-id').value;
-            const dateVal = document.getElementById('m-date').value;
+            const periodType = document.getElementById('m-period-type').value;
+            const periodValue = document.getElementById('m-period-value').value;
             const source = document.getElementById('m-source').value;
-            const spend = parseFloat(document.getElementById('m-spend').value);
-            if (!dateVal || !source || isNaN(spend)) {
-                showToast('Data, fonte e spesa sono obbligatori', 'error');
-                return;
-            }
-            const body = {
-                date: dateVal,
-                source,
-                campaign: document.getElementById('m-campaign').value || null,
-                spend,
-                note: document.getElementById('m-note').value || null,
-            };
+            const amount = parseFloat(document.getElementById('m-spend').value);
+
+            if (!source || !periodValue || isNaN(amount)) { showToast('Fonte, Valore e Spesa sono obbligatori', 'error'); return; }
+
+            const body = { source, period_type: periodType, period_value: periodValue, amount, note: document.getElementById('m-note').value || null };
+
             try {
                 if (editId) {
-                    await apiFetch(`/api/spend/manual/${editId}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(body),
-                    });
-                    showToast('Voce aggiornata', 'success');
+                    await apiFetch(`/api/spend/manual/${editId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
                 } else {
-                    await apiFetch('/api/spend/manual', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(body),
-                    });
-                    showToast('Voce salvata', 'success');
+                    await apiFetch('/api/spend/manual', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
                 }
+                showToast('Salvato con successo', 'success');
                 cancelManualEdit();
                 loadManualEntries();
                 refreshAll();
-            } catch (ex) {
-                showToast('Errore: ' + ex.message, 'error');
-            }
+            } catch (ex) { showToast('Errore: ' + ex.message, 'error'); }
         }
 
         function editManualEntry(id) {
             const e = manualEntries.find(x => x.id === id);
             if (!e) return;
             document.getElementById('m-edit-id').value = e.id;
-            document.getElementById('m-date').value = (e.date || '').slice(0, 10);
-            document.getElementById('m-source').value = e.source_normalized;
-            document.getElementById('m-campaign').value = e.campaign || '';
-            document.getElementById('m-spend').value = e.spend;
+            document.getElementById('m-source').value = e.source;
+            document.getElementById('m-period-type').value = e.period_type;
+            document.getElementById('m-period-value').value = e.period_value;
+            document.getElementById('m-spend').value = e.amount;
             document.getElementById('m-note').value = e.note || '';
             document.getElementById('manual-form-title').textContent = 'Modifica voce';
             document.getElementById('m-cancel-btn').style.display = 'inline-flex';
+            updatePeriodInput();
         }
 
         function cancelManualEdit() {
             document.getElementById('m-edit-id').value = '';
-            document.getElementById('m-date').value = '';
-            document.getElementById('m-campaign').value = '';
+            document.getElementById('m-period-value').value = '';
             document.getElementById('m-spend').value = '';
             document.getElementById('m-note').value = '';
             document.getElementById('manual-form-title').textContent = 'Nuova voce manuale';
@@ -508,21 +617,43 @@
         }
 
         async function deleteManualEntry(id) {
-            confirmModal('Eliminare questa voce di spesa?', async () => {
+            confirmModal('Eliminare questa voce?', async () => {
                 try {
                     await apiFetch(`/api/spend/manual/${id}`, { method: 'DELETE' });
                     showToast('Voce eliminata', 'success');
                     loadManualEntries();
                     refreshAll();
-                } catch (ex) {
-                    showToast('Eliminazione non riuscita: ' + ex.message, 'error');
-                }
+                } catch (ex) { showToast('Errore: ' + ex.message, 'error'); }
             });
         }
 
-        refreshStatus();
-        loadSources();
-        refreshAll();
+        async function generateForecast() {
+            const btn = document.getElementById('btn-forecast');
+            const spinner = document.getElementById('forecast-spinner');
+            const content = document.getElementById('forecast-content');
+
+            btn.disabled = true;
+            spinner.style.display = 'inline-block';
+            content.style.display = 'block';
+            content.innerHTML = 'Generazione previsione AI in corso, attendere...';
+
+            try {
+                const res = await apiFetch('/api/advanced/forecast-trend' + qp());
+                // Basic markdown parse
+                let text = res.forecast || "Nessuna riposta.";
+                text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+                text = text.replace(/(\r\n|\n)/g, '<br>');
+                content.innerHTML = text;
+            } catch (e) {
+                content.innerHTML = `<span style="color:var(--danger)">Errore: ${e.message}</span>`;
+            } finally {
+                btn.disabled = false;
+                spinner.style.display = 'none';
+            }
+        }
+
+        refreshStatus(); loadSources(); updatePeriodInput(); refreshAll();
     </script>
 </body>
 

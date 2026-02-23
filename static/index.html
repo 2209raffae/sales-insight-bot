@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/style.css" />
+
 </head>
 
 <body>
@@ -45,8 +46,7 @@
             <input type="file" id="lead-file-input" accept=".csv" style="display:none" />
             <div style="display:flex;align-items:center;gap:.75rem;margin-top:.75rem;">
               <button class="btn btn-primary" id="lead-upload-btn" disabled>
-                <span id="lead-spinner" class="spinner" style="display:none"></span>
-                Carica Leads
+                <span id="lead-spinner" class="spinner" style="display:none"></span> Carica Leads
               </button>
               <span id="leads-status-badge" class="badge badge-warning">Nessun lead</span>
             </div>
@@ -57,7 +57,8 @@
           <div class="card">
             <h2 style="margin-bottom:.25rem;">Carica CSV Spese</h2>
             <p style="margin-bottom:1rem;font-size:.85rem;">Obbligatori: <code>date</code>, <code>source</code>,
-              <code>spend</code></p>
+              <code>spend</code>
+            </p>
             <div class="drop-zone" id="spend-drop" style="padding:2rem 1rem;">
               <p>Trascina qui o fai clic per selezionare</p>
               <p style="font-size:.8rem;margin-top:.25rem;" id="spend-file-name">Nessun file selezionato</p>
@@ -65,52 +66,83 @@
             <input type="file" id="spend-file-input" accept=".csv" style="display:none" />
             <div style="display:flex;align-items:center;gap:.75rem;margin-top:.75rem;">
               <button class="btn btn-primary" id="spend-upload-btn" disabled>
-                <span id="spend-spinner" class="spinner" style="display:none"></span>
-                Carica Spese
+                <span id="spend-spinner" class="spinner" style="display:none"></span> Carica Spese
               </button>
               <span id="spend-status-badge" class="badge badge-warning">Nessuna spesa</span>
-            </div>
-            <p id="spend-result" style="margin-top:.6rem;font-size:.85rem;color:var(--text-muted);"></p>
-            <p id="spend-status-text" style="font-size:.8rem;margin-top:.35rem;color:var(--text-muted);"></p>
-          </div>
-        </div>
+              <p id="spend-result" style="margin-top:.6rem;font-size:.85rem;color:var(--text-muted);"></p>
+              <p id="spend-status-text" style="font-size:.8rem;margin-top:.35rem;color:var(--text-muted);"></p>
 
-        <div class="card">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
-            <h2 style="margin:0;">Storico caricamenti</h2>
-            <div style="display:flex;gap:.5rem;align-items:center;">
-              <select id="history-filter" class="btn btn-ghost"
-                style="font-size:.85rem;padding:6px 12px;cursor:pointer;">
-                <option value="">Tutti i dataset</option>
-                <option value="leads">Leads</option>
-                <option value="spend">Spese</option>
-              </select>
-              <button class="btn btn-ghost" onclick="loadHistory()" style="font-size:.85rem;">Aggiorna</button>
+              <div style="margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--border);">
+                <p style="font-size:.85rem;margin-bottom:0.5rem;font-weight:600;">Scarica template CSV vuoto</p>
+                <div style="display:flex;gap:0.5rem;align-items:center;">
+                  <input type="number" id="tpl-year"
+                    style="width:75px;padding:6px 10px;font-size:.85rem;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);"
+                    placeholder="Anno">
+                  <select id="tpl-month"
+                    style="padding:6px 10px;font-size:.85rem;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);flex:1;"></select>
+                  <button class="btn btn-secondary" onclick="downloadTemplate()"
+                    style="padding: 6px 12px; font-size:.85rem;">Scarica</button>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="table-wrap">
-            <table id="history-table">
-              <thead>
-                <tr>
-                  <th>Dataset</th>
-                  <th>File</th>
-                  <th>Caricato il</th>
-                  <th>Nuovi</th>
-                  <th>Scartati</th>
-                  <th>Aggiornati</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="history-tbody">
-                <tr>
-                  <td colspan="7" class="empty-state">Caricamento...</td>
-                </tr>
-              </tbody>
-            </table>
+
+          <div class="card">
+            <div
+              style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+              <h2 style="margin:0;">Storico caricamenti</h2>
+              <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+                <select id="history-filter" style="font-size:.85rem;padding:8px 12px;cursor:pointer;">
+                  <option value="">Tutti i dataset</option>
+                  <option value="leads">Leads (CSV)</option>
+                  <option value="spend">Spese (CSV)</option>
+                </select>
+                <button class="btn btn-ghost" onclick="loadHistory()"
+                  style="padding: 8px 14px; font-size:.85rem;">Aggiorna</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table id="history-table">
+                <thead>
+                  <tr>
+                    <th>Dataset</th>
+                    <th>File</th>
+                    <th>Caricato il</th>
+                    <th>Nuovi</th>
+                    <th>Scartati</th>
+                    <th>Aggiornati</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="history-tbody">
+                  <tr>
+                    <td colspan="7" class="empty-state">Caricamento...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
     </main>
+  </div>
+
+  <!-- Mapping Modal -->
+  <div class="modal-overlay" id="mapping-modal">
+    <div class="modal-box" style="max-width: 500px;">
+      <h3>Conferma Mapping Colonne</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Il sistema non e riuscito ad abbinare automaticamente tutte le colonne necessarie con assoluta certezza.
+        Verifica e correggi le selezioni.
+      </p>
+      <div id="mapping-container" class="mapping-modal">
+        <!-- dynamic rows appended here -->
+      </div>
+      <div class="modal-actions" style="margin-top: 1.5rem;">
+        <button class="btn btn-ghost"
+          onclick="document.getElementById('mapping-modal').classList.remove('open')">Annulla</button>
+        <button class="btn btn-primary" onclick="submitMapping()">Conferma e Carica</button>
+      </div>
+    </div>
   </div>
 
   <div class="modal-overlay" id="confirm-modal">
@@ -135,12 +167,76 @@
       onSuccess: () => { refreshStatus(); loadHistory(); }
     });
 
+    // Mapping Logic
+    let currentMappingCols = [];
+    let currentSuggested = {};
+    let currentFileObj = null;
+
+    function openMappingModal(columns, suggested) {
+      currentMappingCols = columns;
+      currentSuggested = suggested || {};
+      const container = document.getElementById('mapping-container');
+      const requiredFields = [
+        { id: "date", label: "Data (date)" },
+        { id: "source", label: "Fonte (source)" },
+        { id: "spend", label: "Spesa (spend)" },
+        { id: "campaign", label: "Campagna (Opzionale)" }
+      ];
+
+      let html = "";
+      for (const f of requiredFields) {
+        let options = `<option value="">-- Seleziona colonna --</option>`;
+        options += columns.map(c => `<option value="${c}" ${currentSuggested[f.id] === c ? 'selected' : ''}>${c}</option>`).join('');
+
+        html += `
+                    <div class="mapping-row">
+                        <label>${f.label}</label>
+                        <select id="map-${f.id}">${options}</select>
+                    </div>
+                `;
+      }
+      container.innerHTML = html;
+      document.getElementById('mapping-modal').classList.add('open');
+    }
+
+    function submitMapping() {
+      const mapping = {
+        date: document.getElementById('map-date').value,
+        source: document.getElementById('map-source').value,
+        spend: document.getElementById('map-spend').value,
+        campaign: document.getElementById('map-campaign').value,
+      };
+
+      if (!mapping.date || !mapping.source || !mapping.spend) {
+        showToast("Seleziona almeno i campi obbligatori (Data, Fonte, Spesa).", "error");
+        return;
+      }
+
+      // Remove empty keys
+      if (!mapping.campaign) delete mapping.campaign;
+
+      // set global form extra params
+      window._currentUploadExtraParams = { mapping: JSON.stringify(mapping) };
+
+      // Re-trigger the button click for custom upload
+      document.getElementById('mapping-modal').classList.remove('open');
+      document.getElementById('spend-upload-btn').click();
+    }
+
     makeUploader({
       dropZoneId: 'spend-drop', fileInputId: 'spend-file-input',
       uploadBtnId: 'spend-upload-btn', spinnerId: 'spend-spinner',
       fileNameId: 'spend-file-name', resultId: 'spend-result',
       endpoint: '/api/spend/upload',
-      onSuccess: () => { refreshStatus(); loadHistory(); }
+      onSuccess: (data, file) => {
+        if (data.status === "needs_mapping") {
+          currentFileObj = file; // stored if we need it
+          openMappingModal(data.columns, data.suggested_mapping);
+        } else {
+          refreshStatus();
+          loadHistory();
+        }
+      }
     });
 
     function dsLabel(ds) {
@@ -164,20 +260,20 @@
           return;
         }
         tbody.innerHTML = rows.map(r => `
-          <tr>
-            <td><span class="badge ${r.dataset === 'leads' ? 'badge-info' : 'badge-success'}">${dsLabel(r.dataset)}</span></td>
-            <td style="font-size:.85rem;">${r.filename}</td>
-            <td style="font-size:.83rem;color:var(--text-muted);">${fmtDate(r.uploaded_at)}</td>
-            <td style="color:var(--success);">+${r.rows_new}</td>
-            <td style="color:var(--text-muted);">${r.rows_skipped}</td>
-            <td style="color:var(--accent);">${r.rows_updated}</td>
-            <td>
-              <button class="btn btn-danger" style="font-size:.78rem;padding:4px 10px;" onclick="deleteBatch('${r.upload_id}','${r.filename}',${r.rows_new},${r.rows_updated})">Elimina</button>
-            </td>
-          </tr>
-        `).join('');
+                    <tr>
+                        <td><span class="badge ${r.dataset === 'leads' ? 'badge-info' : 'badge-success'}">${dsLabel(r.dataset)}</span></td>
+                        <td style="font-size:.85rem;">${r.filename}</td>
+                        <td style="font-size:.83rem;color:var(--text-muted);">${fmtDate(r.uploaded_at)}</td>
+                        <td style="color:var(--success);">+${r.rows_new}</td>
+                        <td style="color:var(--text-muted);">${r.rows_skipped}</td>
+                        <td style="color:var(--accent);">${r.rows_updated ?? 0}</td>
+                        <td>
+                            <button class="btn btn-danger" style="font-size:.78rem;padding:4px 10px;" onclick="deleteBatch('${r.upload_id}','${r.filename}',${r.rows_new},${r.rows_updated ?? 0})">Elimina</button>
+                        </td>
+                    </tr>
+                `).join('');
       } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Errore nel caricamento storico: ${e.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Errore nel caricamento storico.</td></tr>`;
       }
     }
 
@@ -198,6 +294,24 @@
     document.getElementById('history-filter').addEventListener('change', loadHistory);
     refreshStatus();
     loadHistory();
+
+    // Template initializers
+    const months = ["", "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
+    document.getElementById('tpl-month').innerHTML = months.map((m, i) => i === 0 ? '' : `<option value="${i}">${m}</option>`).join('');
+    const now = new Date();
+    document.getElementById('tpl-year').value = now.getFullYear();
+    document.getElementById('tpl-month').value = now.getMonth() + 1;
+
+    function downloadTemplate() {
+      const year = document.getElementById('tpl-year').value;
+      const month = document.getElementById('tpl-month').value;
+      let url = '/api/spend/template';
+      const params = [];
+      if (year) params.push(`year=${year}`);
+      if (month) params.push(`month=${month}`);
+      if (params.length) url += '?' + params.join('&');
+      window.location.href = url;
+    }
   </script>
   <style>
     @media(max-width:640px) {
