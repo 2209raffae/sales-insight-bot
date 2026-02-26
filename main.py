@@ -3,6 +3,7 @@ Sales Insight Bot - AI Lead & Spend Analytics Copilot
 FastAPI application entry point.
 """
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -19,6 +20,13 @@ app = FastAPI(
     version="3.0.0",
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class UTF8StaticFiles(StaticFiles):
     async def get_response(self, path, scope):
@@ -96,3 +104,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     if request.url.path.startswith("/api"):
         return JSONResponse(status_code=500, content={"detail": "Internal server error."})
     return JSONResponse(status_code=500, content={"detail": "Internal server error."})
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="127.0.0.1", port=4000, reload=True)
