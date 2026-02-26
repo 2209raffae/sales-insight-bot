@@ -45,6 +45,7 @@ class UTF8StaticFiles(StaticFiles):
         return response
 
 
+
 @app.middleware("http")
 async def enforce_utf8_charset(request: Request, call_next):
     response = await call_next(request)
@@ -80,8 +81,6 @@ app.include_router(manual_spend.router)
 app.include_router(chat.router)
 app.include_router(report.router)
 
-# Static files
-app.mount("/static", UTF8StaticFiles(directory="static"), name="static")
 
 
 @app.exception_handler(StarletteHTTPException)
