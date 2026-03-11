@@ -4,7 +4,7 @@ import { DollarSign, AlertCircle, Edit2, Trash2, Calendar, Zap, Bot } from 'luci
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, AreaChart, Area } from 'recharts';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://127.0.0.1:4000/api';
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
 const SpendPage = () => {
     const today = new Date();

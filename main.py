@@ -13,6 +13,7 @@ from models import Base, LeadRecord, CampaignSpend, UploadBatch, CampaignMonthly
 
 from routers import leads_upload, leads_kpi, chat
 from routers import spend_upload, spend_kpi, spend_advanced, uploads, budgets, manual_spend, report
+from routers import hr_screening, hr_performance, hr_chat
 
 app = FastAPI(
     title="AI Lead & Spend Analytics Copilot",
@@ -22,7 +23,12 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=[
+        "http://localhost:5173", 
+        "http://127.0.0.1:5173",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -80,6 +86,9 @@ app.include_router(budgets.router)
 app.include_router(manual_spend.router)
 app.include_router(chat.router)
 app.include_router(report.router)
+app.include_router(hr_screening.router)
+app.include_router(hr_performance.router)
+app.include_router(hr_chat.router)
 
 
 

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Upload, FileText, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const API_BASE_URL = 'http://127.0.0.1:4000/api';
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
 const UploadModule = ({
     title,

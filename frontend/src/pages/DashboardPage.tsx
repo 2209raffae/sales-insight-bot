@@ -4,7 +4,7 @@ import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, A
 import { Activity, TrendingUp, Users, DollarSign, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://127.0.0.1:4000/api';
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
 const StatCard = ({ title, value, icon: Icon, color, delay }: any) => (
     <motion.div
