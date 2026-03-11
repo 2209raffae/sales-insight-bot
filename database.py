@@ -38,7 +38,8 @@ def get_db():
 def _existing_columns(conn, table: str) -> set[str]:
     """Return set of column names currently in `table` (engine agnostic)."""
     try:
-        inspector = inspect(engine)
+        # Usa inspect sulla connessione corrente per evitare deadlock pg
+        inspector = inspect(conn)
         columns = inspector.get_columns(table)
         return {col['name'] for col in columns}
     except Exception:
@@ -51,62 +52,56 @@ def run_migrations():
     Safe to run every startup. SQLite does not support DROP COLUMN, so
     removed columns are simply ignored.
     """
-    with engine.connect() as conn:
-        # lead_records: add upload_id if missing
-        cols = _existing_columns(conn, "lead_records")
-        if "upload_id" not in cols:
-            try:
-                conn.execute(text("ALTER TABLE lead_records ADD COLUMN upload_id VARCHAR"))
-                conn.commit()
-            except Exception:
-                conn.rollback()
-
-        # lead_records: add closed_at if missing
-        cols = _existing_columns(conn, "lead_records")
-        if "closed_at" not in cols:
-            try:
-                conn.execute(text("ALTER TABLE lead_records ADD COLUMN closed_at DATETIME"))
-                conn.commit()
-            except Exception:
-                conn.rollback()
-
-        # campaign_spends: add entry_type if missing
-        cols = _existing_columns(conn, "campaign_spends")
-        if "entry_type" not in cols:
-            try:
-                conn.execute(text("ALTER TABLE campaign_spends ADD COLUMN entry_type VARCHAR DEFAULT 'csv'"))
-                conn.commit()
-            except Exception:
-                conn.rollback()
-
-        # campaign_spends: add note if missing
-        cols = _existing_columns(conn, "campaign_spends")
-        if "note" not in cols:
-            try:
-                conn.execute(text("ALTER TABLE campaign_spends ADD COLUMN note VARCHAR"))
-                conn.commit()
-            except Exception:
-                conn.rollback()
-
-        # upload_batches: add user, mapping_used, reject_reasons if missing
-        cols = _existing_columns(conn, "upload_batches")
-        if "user" not in cols:
-            try:
-                conn.execute(text("ALTER TABLE upload_batches ADD COLUMN user VARCHAR"))
-                conn.commit()
-            except Exception:
-                conn.rollback()
-        
-        if "mapping_used" not in cols:
-            try:
-                conn.execute(text("ALTER TABLE upload_batches ADD COLUMN mapping_used VARCHAR"))
-                conn.commit()
-            except Exception:
-                conn.rollback()
-                
-        if "reject_reasons" not in cols:
-            try:
-                conn.execute(text("ALTER TABLE upload_batches ADD COLUMN reject_reasons VARCHAR"))
-                conn.commit()
-            except Exception:
-                conn.rollback()
+    # Usiamo begin() cosicché un'eccezione non avveleni l'intero engine
+    try:
+        with engine.begin() as conn:
+            # check se le tabelle esistono, altrimenti skip (succede al primissimo avvio prep-create_all)
+            inspector = inspect(conn)
+            tables = inspector.get_table_names()
+            
+            if "lead_records" in tables:
+                cols = _existing_columns(conn, "lead_records")
+                if "upload_id" not in cols:
+                    try:
+                        conn.execute(text("ALTER TABLE lead_records ADD COLUMN upload_id VARCHAR"))
+                    except Exception:
+                        pass
+                if "closed_at" not in cols:
+                    try:
+                        conn.execute(text("ALTER TABLE lead_records ADD COLUMN closed_at DATETIME"))
+                    except Exception:
+                        pass
+                        
+            if "campaign_spends" in tables:
+                cols = _existing_columns(conn, "campaign_spends")
+                if "entry_type" not in cols:
+                    try:
+                        conn.execute(text("ALTER TABLE campaign_spends ADD COLUMN entry_type VARCHAR DEFAULT 'csv'"))
+                    except Exception:
+                        pass
+                if "note" not in cols:
+                    try:
+                        conn.execute(text("ALTER TABLE campaign_spends ADD COLUMN note VARCHAR"))
+                    except Exception:
+                        pass
+                        
+            if "upload_batches" in tables:
+                cols = _existing_columns(conn, "upload_batches")
+                if "user" not in cols:
+                    try:
+                        conn.execute(text("ALTER TABLE upload_batches ADD COLUMN \"user\" VARCHAR"))  # 'user' is reserved in pg
+                    except Exception:
+                        pass
+                if "mapping_used" not in cols:
+                    try:
+                        conn.execute(text("ALTER TABLE upload_batches ADD COLUMN mapping_used VARCHAR"))
+                    except Exception:
+                        pass
+                if "reject_reasons" not in cols:
+                    try:
+                        conn.execute(text("ALTER TABLE upload_batches ADD COLUMN reject_reasons VARCHAR"))
+                    except Exception:
+                        pass
+    except Exception:
+        # Se c'è un deadlock irrecuperabile a livello macro o tabelle rotte, proseguiamo (fallirà elegantemente altrove se critico)
+        pass

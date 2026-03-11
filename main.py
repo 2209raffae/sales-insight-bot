@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.staticfiles import StaticFiles
-from database import engine, run_migrations
+from database import engine
 from models import Base, LeadRecord, CampaignSpend, UploadBatch, CampaignMonthlyBudget, ActualSpend  # noqa: F401
 
 from routers import leads_upload, leads_kpi, chat
@@ -72,7 +72,6 @@ async def enforce_utf8_charset(request: Request, call_next):
 @app.on_event("startup")
 def on_startup():
     Base.metadata.create_all(bind=engine)      # creates new tables if not present
-    run_migrations()                           # idempotent: adds missing columns
 
 
 # Include routers
