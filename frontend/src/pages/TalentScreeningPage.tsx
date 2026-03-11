@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { UploadCloud, FileText, CheckCircle2, AlertTriangle, ShieldAlert, User, Briefcase, GraduationCap, Star } from 'lucide-react';
 
 interface CVResult {

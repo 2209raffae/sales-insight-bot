@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Activity, Users, TrendingUp, AlertCircle, RefreshCw, Zap } from 'lucide-react';
 
 interface Employee {
@@ -31,7 +31,7 @@ const PerformanceRadarPage = () => {
                 setEmployees(data);
                 if (data.length > 0) handleSelectEmployee(data[0].id);
             })
-            .catch(err => setErrorMSG("Impossibile caricare i dipendenti."));
+            .catch(() => setErrorMSG("Impossibile caricare i dipendenti."));
     }, []);
 
     const handleSelectEmployee = async (id: number) => {
@@ -76,8 +76,8 @@ const PerformanceRadarPage = () => {
                                 key={emp.id}
                                 onClick={() => handleSelectEmployee(emp.id)}
                                 className={`w-full text-left p-3 rounded-xl border transition-all flex justify-between items-center ${selectedEmp === emp.id
-                                        ? 'bg-neon-blue/10 border-neon-blue/40 shadow-[0_0_15px_rgba(0,210,255,0.15)]'
-                                        : 'bg-black/30 border-white/5 hover:border-white/20'
+                                    ? 'bg-neon-blue/10 border-neon-blue/40 shadow-[0_0_15px_rgba(0,210,255,0.15)]'
+                                    : 'bg-black/30 border-white/5 hover:border-white/20'
                                     }`}
                             >
                                 <div>

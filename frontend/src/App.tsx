@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import {
-  Bot, Database, Home, ChevronLeft, Users, DollarSign, Target, FileText,
+  Bot, Database, ChevronLeft, Users, DollarSign, Target, FileText,
   ArrowRight, Activity, Zap, Box, Headset, Scale, Megaphone, Briefcase
 } from 'lucide-react';
 import React, { useEffect, useRef } from 'react';
@@ -227,21 +227,13 @@ const HRCopilotHub = () => (
   />
 );
 
-// Placeholder generico per moduli in sviluppo
-const UnderConstruction = ({ title }: { title: string }) => (
-  <div className="h-[80vh] flex flex-col items-center justify-center text-center">
-    <Bot size={64} className="text-neon-purple mb-6 animate-pulse" />
-    <h2 className="text-3xl font-bold font-['Space_Grotesk'] mb-4">{title}</h2>
-    <p className="text-slate-400 max-w-md">Questo modulo dell'agente è attualmente in fase di sviluppo. Torna presto per scoprire le nuove funzionalità basate su AI.</p>
-  </div>
-);
+// Unused placeholders rimossi per non bloccare Typescript
 
 
 // ─── App Shell ────────────────────────────────────────────────────────────────
 const LayoutContent = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const path = location.pathname;
-  const isRootPath = path === '/';
 
   // Logic to determine where the "Back" button should go, and if it should show
   let backTo = '';
