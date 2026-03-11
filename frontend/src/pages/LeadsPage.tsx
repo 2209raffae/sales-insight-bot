@@ -4,7 +4,7 @@ import { Users, Activity, Filter, AlertTriangle, UserCheck } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+const API_BASE_URL = '/api';
 
 const LeadsPage = () => {
     const [activeTab, setActiveTab] = useState('status');

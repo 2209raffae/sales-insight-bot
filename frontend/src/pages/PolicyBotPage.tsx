@@ -29,7 +29,7 @@ const PolicyBotPage = () => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://localhost:8000/api/hr/chat', {
+            const response = await fetch('/api/hr/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -97,15 +97,15 @@ const PolicyBotPage = () => {
                         messages.map((msg) => (
                             <div key={msg.id} className={`flex items-start gap-4 ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}>
                                 <div className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center border-2 shadow-lg ${msg.sender === 'user'
-                                        ? 'bg-neon-blue/10 border-neon-blue text-neon-blue shadow-[0_0_10px_rgba(0,210,255,0.2)]'
-                                        : 'bg-neon-pink/10 border-neon-pink text-neon-pink shadow-[0_0_10px_rgba(255,0,127,0.2)]'
+                                    ? 'bg-neon-blue/10 border-neon-blue text-neon-blue shadow-[0_0_10px_rgba(0,210,255,0.2)]'
+                                    : 'bg-neon-pink/10 border-neon-pink text-neon-pink shadow-[0_0_10px_rgba(255,0,127,0.2)]'
                                     }`}>
                                     {msg.sender === 'user' ? <User size={18} /> : <Bot size={18} />}
                                 </div>
 
                                 <div className={`max-w-[80%] rounded-2xl p-4 leading-relaxed whitespace-pre-wrap ${msg.sender === 'user'
-                                        ? 'bg-neon-blue/10 border border-neon-blue/20 text-blue-50'
-                                        : 'bg-black/40 border border-white/5 text-slate-200 shadow-[inset_0_0_20px_rgba(255,255,255,0.02)]'
+                                    ? 'bg-neon-blue/10 border border-neon-blue/20 text-blue-50'
+                                    : 'bg-black/40 border border-white/5 text-slate-200 shadow-[inset_0_0_20px_rgba(255,255,255,0.02)]'
                                     }`}>
                                     {msg.text}
                                 </div>

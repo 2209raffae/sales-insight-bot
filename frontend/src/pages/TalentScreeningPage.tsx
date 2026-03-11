@@ -28,7 +28,7 @@ const TalentScreeningPage = () => {
         setResult(null);
 
         try {
-            const response = await fetch('http://localhost:8000/api/hr/screening', {
+            const response = await fetch('/api/hr/screening', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
