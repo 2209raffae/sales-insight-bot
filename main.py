@@ -71,8 +71,8 @@ async def enforce_utf8_charset(request: Request, call_next):
 
 @app.on_event("startup")
 def on_startup():
-    run_migrations()                           # idempotent: adds missing columns
     Base.metadata.create_all(bind=engine)      # creates new tables if not present
+    run_migrations()                           # idempotent: adds missing columns
 
 
 # Include routers

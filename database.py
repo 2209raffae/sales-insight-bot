@@ -3,7 +3,7 @@ Database setup — SQLite via SQLAlchemy.
 Provides run_migrations() for safe, idempotent column/table additions on existing DBs.
 """
 import os
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, inspect
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from dotenv import load_dotenv
 
@@ -36,10 +36,11 @@ def get_db():
 
 
 def _existing_columns(conn, table: str) -> set[str]:
-    """Return set of column names currently in `table` (SQLite safe)."""
+    """Return set of column names currently in `table` (engine agnostic)."""
     try:
-        result = conn.execute(text(f"PRAGMA table_info({table})"))
-        return {row[1] for row in result}
+        inspector = inspect(engine)
+        columns = inspector.get_columns(table)
+        return {col['name'] for col in columns}
     except Exception:
         return set()
 
@@ -58,7 +59,7 @@ def run_migrations():
                 conn.execute(text("ALTER TABLE lead_records ADD COLUMN upload_id VARCHAR"))
                 conn.commit()
             except Exception:
-                pass
+                conn.rollback()
 
         # lead_records: add closed_at if missing
         cols = _existing_columns(conn, "lead_records")
@@ -67,7 +68,7 @@ def run_migrations():
                 conn.execute(text("ALTER TABLE lead_records ADD COLUMN closed_at DATETIME"))
                 conn.commit()
             except Exception:
-                pass
+                conn.rollback()
 
         # campaign_spends: add entry_type if missing
         cols = _existing_columns(conn, "campaign_spends")
@@ -76,7 +77,7 @@ def run_migrations():
                 conn.execute(text("ALTER TABLE campaign_spends ADD COLUMN entry_type VARCHAR DEFAULT 'csv'"))
                 conn.commit()
             except Exception:
-                pass
+                conn.rollback()
 
         # campaign_spends: add note if missing
         cols = _existing_columns(conn, "campaign_spends")
@@ -85,7 +86,7 @@ def run_migrations():
                 conn.execute(text("ALTER TABLE campaign_spends ADD COLUMN note VARCHAR"))
                 conn.commit()
             except Exception:
-                pass
+                conn.rollback()
 
         # upload_batches: add user, mapping_used, reject_reasons if missing
         cols = _existing_columns(conn, "upload_batches")
@@ -94,18 +95,18 @@ def run_migrations():
                 conn.execute(text("ALTER TABLE upload_batches ADD COLUMN user VARCHAR"))
                 conn.commit()
             except Exception:
-                pass
+                conn.rollback()
         
         if "mapping_used" not in cols:
             try:
                 conn.execute(text("ALTER TABLE upload_batches ADD COLUMN mapping_used VARCHAR"))
                 conn.commit()
             except Exception:
-                pass
+                conn.rollback()
                 
         if "reject_reasons" not in cols:
             try:
                 conn.execute(text("ALTER TABLE upload_batches ADD COLUMN reject_reasons VARCHAR"))
                 conn.commit()
             except Exception:
-                pass
+                conn.rollback()
