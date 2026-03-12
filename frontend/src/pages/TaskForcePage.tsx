@@ -64,7 +64,8 @@ const TaskForcePage = () => {
         if (user?.is_admin === 1) {
             // Admin needs to be able to add users, grab user list. In a real app we'd have a user search endpoint.
             // We can use the admin users endpoint if the user is admin.
-            axios.get('/api/admin/users').then(res => setAllUsers(res.data)).catch(console.error);
+            axios.get('/api/admin/users', { headers: { Authorization: `Bearer ${localStorage.getItem('nexus_token')}` } })
+                .then(res => setAllUsers(res.data)).catch(console.error);
         }
     }, [user]);
 
