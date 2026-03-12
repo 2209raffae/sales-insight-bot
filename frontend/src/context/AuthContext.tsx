@@ -2,6 +2,17 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import axios from 'axios';
 
+// Global Axios Interceptor to always attach the latest token before any request
+axios.interceptors.request.use((config) => {
+    const token = localStorage.getItem('nexus_token');
+    if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+}, (error) => {
+    return Promise.reject(error);
+});
+
 interface UserPermission {
     agent_slug: string;
     module_slug: string | null;
@@ -104,15 +115,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             return false;
         });
     };
-
-    // Set default Authorization header for all axios requests
-    useEffect(() => {
-        if (token) {
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        } else {
-            delete axios.defaults.headers.common['Authorization'];
-        }
-    }, [token]);
 
     return (
         <AuthContext.Provider value={{ user, token, isLoading, login, register, logout, hasAccess }}>
