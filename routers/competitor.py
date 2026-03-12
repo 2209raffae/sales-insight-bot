@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, HttpUrl
 import httpx
 from bs4 import BeautifulSoup
+import os
 from openai import AsyncOpenAI
 from routers.auth import get_current_user
 from models import UserProfile
@@ -10,7 +11,7 @@ router = APIRouter(prefix="/api/competitor", tags=["Competitor Radar"])
 
 # Initialize Groq client
 client = AsyncOpenAI(
-    api_key=None, # Will use GROQ_API_KEY env var automatically, or passed via depends if needed. For now assuming env var is set
+    api_key=os.getenv("GROQ_API_KEY", ""),
     base_url="https://api.groq.com/openai/v1"
 )
 
