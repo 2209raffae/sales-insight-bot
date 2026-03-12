@@ -2,16 +2,11 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import axios from 'axios';
 
-// Global Axios Interceptor to always attach the latest token before any request
-axios.interceptors.request.use((config) => {
-    const token = localStorage.getItem('nexus_token');
-    if (token && config.headers) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-}, (error) => {
-    return Promise.reject(error);
-});
+// Global setup per Axios
+const initialToken = localStorage.getItem('nexus_token');
+if (initialToken) {
+    axios.defaults.headers.common['Authorization'] = `Bearer ${initialToken}`;
+}
 
 interface UserPermission {
     agent_slug: string;
@@ -83,6 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem("nexus_token", access_token);
         setToken(access_token);
         setUser(userData);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
     };
 
     const register = async (data: RegisterData) => {
@@ -91,12 +87,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem("nexus_token", access_token);
         setToken(access_token);
         setUser(userData);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
     };
 
     const logout = () => {
         localStorage.removeItem("nexus_token");
         setToken(null);
         setUser(null);
+        delete axios.defaults.headers.common['Authorization'];
     };
 
     const hasAccess = (agentSlug: string, moduleSlug?: string): boolean => {
