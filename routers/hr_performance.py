@@ -104,8 +104,16 @@ def get_performance_radar(employee_id: int, db: Session = Depends(get_db)):
         }
     
     # Calcolo Trend: Raggruppiamo i lead vinti per mese per questo utente
+    # Adattiamo la query al dialetto del database
+    from database import DATABASE_URL
+    if DATABASE_URL.startswith("sqlite"):
+        month_expr = func.strftime('%Y-%m', LeadRecord.opened_at).label('month')
+    else:
+        # PostgreSQL
+        month_expr = func.to_char(LeadRecord.opened_at, 'YYYY-MM').label('month')
+
     monthly_query = db.query(
-        func.strftime('%Y-%m', LeadRecord.opened_at).label('month'),
+        month_expr,
         func.count(LeadRecord.id).label('total_month')
     ).filter(
         (LeadRecord.assignee == emp["name"]) | (LeadRecord.operator == emp["name"]),
