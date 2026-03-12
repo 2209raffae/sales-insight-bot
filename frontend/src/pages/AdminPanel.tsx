@@ -22,7 +22,7 @@ interface UserData {
 }
 
 const AdminPanel = () => {
-    const { user } = useAuth();
+    const { user, token } = useAuth();
     const [users, setUsers] = useState<UserData[]>([]);
     const [loading, setLoading] = useState(true);
     const [expandedUser, setExpandedUser] = useState<number | null>(null);
@@ -32,7 +32,9 @@ const AdminPanel = () => {
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            const res = await axios.get('/api/admin/users');
+            const res = await axios.get('/api/admin/users', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             setUsers(res.data);
         } catch {
             setError('Errore nel caricamento utenti');
@@ -62,6 +64,8 @@ const AdminPanel = () => {
             if (!u) return;
             await axios.put(`/api/admin/users/${userId}/permissions`, {
                 permissions: u.permissions.map(p => ({ agent_slug: p.agent_slug, module_slug: p.module_slug }))
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
             });
         } catch {
             setError('Errore nel salvataggio permessi');
@@ -73,7 +77,9 @@ const AdminPanel = () => {
     const deleteUser = async (userId: number) => {
         if (!confirm('Sei sicuro di voler eliminare questo utente?')) return;
         try {
-            await axios.delete(`/api/admin/users/${userId}`);
+            await axios.delete(`/api/admin/users/${userId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             setUsers(prev => prev.filter(u => u.id !== userId));
         } catch (err: any) {
             setError(err.response?.data?.detail || 'Errore eliminazione');
