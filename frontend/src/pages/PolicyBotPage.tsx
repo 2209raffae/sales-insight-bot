@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, KeyboardEvent } from 'react';
+import { motion } from 'framer-motion';
 import { Bot, Send, User, ChevronRight } from 'lucide-react';
 
 interface ChatMessage {
@@ -13,7 +14,6 @@ const PolicyBotPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const endOfMessagesRef = useRef<HTMLDivElement>(null);
 
-    // Auto-scroll all'ultimo messaggio
     useEffect(() => {
         endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
@@ -44,7 +44,7 @@ const PolicyBotPage = () => {
             const aiMsg: ChatMessage = { id: (Date.now() + 1).toString(), sender: 'ai', text: data.reply };
 
             setMessages(prev => [...prev, aiMsg]);
-        } catch (err: any) {
+        } catch (_err: any) {
             const errorMsg: ChatMessage = { id: (Date.now() + 1).toString(), sender: 'ai', text: "Errore di connessione al bot HR." };
             setMessages(prev => [...prev, errorMsg]);
         } finally {
@@ -52,7 +52,7 @@ const PolicyBotPage = () => {
         }
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSend();
@@ -60,33 +60,40 @@ const PolicyBotPage = () => {
     };
 
     return (
-        <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 pb-20 mt-4 sm:mt-8 flex flex-col h-[calc(100vh-140px)]">
-            <div className="mb-6 shrink-0">
-                <h1 className="text-3xl font-bold font-['Space_Grotesk'] text-white flex items-center gap-3">
-                    <Bot className="text-neon-pink" size={32} />
-                    Policy & Leave <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-pink to-neon-purple">Bot</span>
-                </h1>
-                <p className="text-slate-400 mt-2">Assistente virtuale per policy aziendali, resoconti ferie e richieste permessi.</p>
-            </div>
+        <div className="pt-24 pb-12 w-full animate-in fade-in duration-500 relative z-10 min-h-screen flex flex-col">
 
-            <div className="flex-1 glass-panel rounded-2xl flex flex-col overflow-hidden border border-white/5 relative">
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+                <div>
+                    <h1 className="flex items-center gap-3 text-4xl font-black bg-gradient-to-r from-neon-pink to-neon-purple text-transparent bg-clip-text tracking-tighter uppercase mb-2">
+                        <Bot size={36} className="text-neon-pink" />
+                        Policy & Leave Bot
+                    </h1>
+                    <p className="text-gray-400 font-light tracking-wide flex items-center gap-2 text-sm uppercase">
+                        <span className="w-2 h-2 rounded-full bg-neon-pink animate-pulse"></span>
+                        Assistente AI per Policy Aziendali e Ferie
+                    </p>
+                </div>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                className="flex-1 glass-panel rounded-xl flex flex-col overflow-hidden relative">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-neon-pink/5 blur-[80px] pointer-events-none" />
 
                 {/* Chat Area */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 z-10 scroll-smooth">
                     {messages.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-slate-500 gap-4">
-                            <div className="w-20 h-20 rounded-full bg-neon-pink/10 flex items-center justify-center mb-2">
+                            <div className="w-20 h-20 rounded-full bg-neon-pink/10 flex items-center justify-center mb-2 border border-neon-pink/20">
                                 <Bot size={40} className="text-neon-pink" />
                             </div>
-                            <p className="text-center max-w-sm">"Ciao! Sono l'assistente per le risorse umane. Puoi chiedermi info su ferie, smart working, benefit, o policy interne."</p>
+                            <p className="text-center max-w-sm text-sm">"Ciao! Sono l'assistente per le risorse umane. Puoi chiedermi info su ferie, smart working, benefit, o policy interne."</p>
 
                             <div className="flex flex-wrap gap-2 justify-center mt-6">
                                 {['Quanti giorni di ferie ho?', 'Policy Smart Working', 'Come rimborso una spesa?'].map(txt => (
                                     <button
                                         key={txt}
                                         onClick={() => setInput(txt)}
-                                        className="text-xs px-3 py-1.5 rounded-full border border-neon-purple/30 text-neon-purple hover:bg-neon-purple/10 flex items-center gap-1 transition-colors bg-black/40"
+                                        className="text-xs px-3 py-1.5 rounded-full border border-neon-purple/30 text-neon-purple hover:bg-neon-purple/10 flex items-center gap-1 transition-colors bg-black/40 uppercase tracking-wider font-bold"
                                     >
                                         {txt} <ChevronRight size={12} />
                                     </button>
@@ -103,7 +110,7 @@ const PolicyBotPage = () => {
                                     {msg.sender === 'user' ? <User size={18} /> : <Bot size={18} />}
                                 </div>
 
-                                <div className={`max-w-[80%] rounded-2xl p-4 leading-relaxed whitespace-pre-wrap ${msg.sender === 'user'
+                                <div className={`max-w-[80%] rounded-2xl p-4 leading-relaxed whitespace-pre-wrap text-sm ${msg.sender === 'user'
                                     ? 'bg-neon-blue/10 border border-neon-blue/20 text-blue-50'
                                     : 'bg-black/40 border border-white/5 text-slate-200 shadow-[inset_0_0_20px_rgba(255,255,255,0.02)]'
                                     }`}>
@@ -147,10 +154,10 @@ const PolicyBotPage = () => {
                         </button>
                     </div>
                     <div className="text-center mt-2">
-                        <span className="text-[10px] text-slate-500">Risposte AI. Verifica sempre le policy nel portale intranet ufficiale.</span>
+                        <span className="text-[10px] text-slate-500 uppercase tracking-wider">Risposte AI. Verifica le policy nel portale intranet ufficiale.</span>
                     </div>
                 </div>
-            </div>
+            </motion.div>
         </div>
     );
 };
