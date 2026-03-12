@@ -91,6 +91,7 @@ app.include_router(hr_performance.router)
 app.include_router(hr_chat.router)
 app.include_router(auth.router)
 app.include_router(admin.router)
+app.include_router(competitor.router)
 
 
 

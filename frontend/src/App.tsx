@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import {
   Bot, Database, ChevronLeft, Users, DollarSign, Target, FileText,
-  ArrowRight, Activity, Zap, Box, Headset, Scale, Megaphone, Briefcase, Shield, LogOut
+  ArrowRight, Activity, Zap, Box, Headset, Briefcase, Shield, LogOut
 } from 'lucide-react';
 import React, { useEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -18,6 +18,9 @@ import ChatPage from './pages/ChatPage';
 import TalentScreeningPage from './pages/TalentScreeningPage';
 import PerformanceRadarPage from './pages/PerformanceRadarPage';
 import PolicyBotPage from './pages/PolicyBotPage';
+
+// Pagine Competitor Radar
+import CompetitorRadarPage from './pages/CompetitorRadarPage';
 
 // Auth Pages
 import LoginPage from './pages/LoginPage';
@@ -226,10 +229,9 @@ const UserBadge = () => {
 const NEXUS_AGENTS: NavItem[] = [
   { icon: Activity, label: 'Sales Insight', desc: 'Intelligence commerciale e previsioni vendite', to: '/sales-insight', accent: '#00d2ff', glow: 'rgba(0,210,255,0.35)', badge: 'ACTIVE' },
   { icon: Users, label: 'HR & Talent Copilot', desc: 'Performance dipendenti, CV screening, policy bot', to: '/hr-copilot', accent: '#a855f7', glow: 'rgba(168,85,247,0.35)', badge: 'ACTIVE' },
+  { icon: Target, label: 'Competitor Radar', desc: 'Analisi concorrenza AI e battle cards strategiche', to: '/competitor-radar', accent: '#f59e0b', glow: 'rgba(245,158,11,0.35)', badge: 'NEW' },
   { icon: Box, label: 'Supply Chain AI', desc: 'Ottimizzazione magazzino e logistica predittiva', to: '#', disabled: true, accent: '#10b981', glow: 'rgba(16,185,129,0.35)', badge: 'SOON' },
-  { icon: Headset, label: 'Customer Sentinel', desc: 'Analisi ticket e assistenza L1 automatizzata', to: '#', disabled: true, accent: '#f59e0b', glow: 'rgba(245,158,11,0.35)', badge: 'SOON' },
-  { icon: Scale, label: 'Legal Radar', desc: 'Scansione contratti e compliance normativa', to: '#', disabled: true, accent: '#ef4444', glow: 'rgba(239,68,68,0.35)', badge: 'SOON' },
-  { icon: Megaphone, label: 'Marketing Agent', desc: 'Analisi ROI campagne e generazione creativa', to: '#', disabled: true, accent: '#ff007f', glow: 'rgba(255,0,127,0.35)', badge: 'SOON' },
+  { icon: Headset, label: 'Customer Sentinel', desc: 'Analisi ticket e assistenza automatizzata', to: '#', disabled: true, accent: '#ef4444', glow: 'rgba(239,68,68,0.35)', badge: 'SOON' },
 ];
 
 const SALES_MODULES: NavItem[] = [
@@ -290,7 +292,7 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
   } else if (path.startsWith('/hr-copilot/')) {
     backTo = '/hr-copilot';
     backLabel = 'Torna all\'Agente HR';
-  } else if (path === '/sales-insight' || path === '/hr-copilot') {
+  } else if (path === '/sales-insight' || path === '/hr-copilot' || path === '/competitor-radar') {
     backTo = '/';
     backLabel = 'Nexus Hub';
   } else if (path === '/admin') {
@@ -298,7 +300,7 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
     backLabel = 'Nexus Hub';
   }
 
-  const isAgentHub = path === '/' || path === '/sales-insight' || path === '/hr-copilot';
+  const isAgentHub = path === '/' || path === '/sales-insight' || path === '/hr-copilot' || path === '/competitor-radar';
   const isAuthPage = path === '/login' || path === '/register';
 
   return (
@@ -354,6 +356,9 @@ const AppRoutes = () => (
       <Route path="/hr-copilot/screening" element={<ProtectedRoute><TalentScreeningPage /></ProtectedRoute>} />
       <Route path="/hr-copilot/performance" element={<ProtectedRoute><PerformanceRadarPage /></ProtectedRoute>} />
       <Route path="/hr-copilot/chat" element={<ProtectedRoute><PolicyBotPage /></ProtectedRoute>} />
+
+      {/* Agente: Competitor Radar */}
+      <Route path="/competitor-radar" element={<ProtectedRoute><CompetitorRadarPage /></ProtectedRoute>} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
