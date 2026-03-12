@@ -44,6 +44,9 @@ class MemberOut(BaseModel):
 class UpdateCreate(BaseModel):
     content: str
 
+class ProjectStatusUpdate(BaseModel):
+    status: str # "attivo", "completato", "sospeso"
+
 class UpdateOut(BaseModel):
     id: int
     author_id: int
@@ -202,6 +205,32 @@ def get_project_detail(project_id: int, user: UserProfile = Depends(get_current_
         members=member_list,
         updates=update_list
     )
+
+
+@router.put("/projects/{project_id}/status", response_model=ProjectOut)
+def update_project_status(project_id: int, req: ProjectStatusUpdate, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Aggiorna lo stato del progetto (solo Admin o Leader)."""
+    proj = db.query(TaskForceProject).filter(TaskForceProject.id == project_id).first()
+    if not proj:
+        raise HTTPException(status_code=404, detail="Progetto non trovato")
+
+    # Verifica permessi
+    if user.is_admin != 1:
+        is_leader = db.query(TaskForceMember).filter(
+            TaskForceMember.project_id == project_id,
+            TaskForceMember.user_id == user.id,
+            TaskForceMember.role == "Leader"
+        ).first()
+        if not is_leader:
+            raise HTTPException(status_code=403, detail="Non hai i permessi per modificare lo stato di questo progetto")
+
+    if req.status not in ["attivo", "completato", "sospeso"]:
+        raise HTTPException(status_code=400, detail="Stato non valido")
+
+    proj.status = req.status
+    db.commit()
+    db.refresh(proj)
+    return proj
 
 
 @router.post("/projects/{project_id}/members", response_model=MemberOut)

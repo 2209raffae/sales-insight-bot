@@ -16,7 +16,7 @@ client = AsyncOpenAI(
 )
 
 class AnalyzeRequest(BaseModel):
-    url: HttpUrl
+    url: str # Stringa flessibile, aggiungiamo https:// se manca
 
 class AnalyzeResponse(BaseModel):
     url: str
@@ -57,7 +57,9 @@ async def fetch_website_text(url: str) -> str:
 async def analyze_competitor(req: AnalyzeRequest, user: UserProfile = Depends(get_current_user)):
     """Analyzes a competitor's website URL and generates a battle card using Groq AI."""
     
-    url_str = str(req.url)
+    url_str = req.url.strip()
+    if not url_str.startswith(("http://", "https://")):
+        url_str = "https://" + url_str
     
     # 1. Scrape the website
     website_text = await fetch_website_text(url_str)
