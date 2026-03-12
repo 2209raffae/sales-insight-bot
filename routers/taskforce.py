@@ -120,6 +120,14 @@ def get_projects(user: UserProfile = Depends(get_current_user), db: Session = De
     return projects
 
 
+@router.get("/operators", response_model=List[dict])
+def list_available_operators(user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Ritorna una lista base di utenti che possono essere aggiunti a una task force."""
+    # Qualunque utente autenticato può vedere la lista basi degli altri utenti per invitarli
+    users = db.query(UserProfile).all()
+    return [{"id": u.id, "first_name": u.first_name, "last_name": u.last_name, "email": u.email} for u in users]
+
+
 @router.post("/projects", response_model=ProjectOut)
 def create_project(req: ProjectCreate, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
     """Crea un nuovo progetto e aggiunge il creatore come Leader."""
@@ -161,9 +169,9 @@ def get_project_detail(project_id: int, user: UserProfile = Depends(get_current_
     members = db.query(TaskForceMember, UserProfile).join(UserProfile, TaskForceMember.user_id == UserProfile.id).filter(TaskForceMember.project_id == project_id).all()
     member_list = [
         MemberOut(
-            id=m.TaskForceMember.id,
+            id=m.id,
             user_id=p.id,
-            role=m.TaskForceMember.role,
+            role=m.role,
             first_name=p.first_name,
             last_name=p.last_name,
             email=p.email
@@ -175,11 +183,11 @@ def get_project_detail(project_id: int, user: UserProfile = Depends(get_current_
     updates = db.query(TaskForceUpdate, UserProfile).join(UserProfile, TaskForceUpdate.author_id == UserProfile.id).filter(TaskForceUpdate.project_id == project_id).order_by(TaskForceUpdate.created_at.desc()).all()
     update_list = [
         UpdateOut(
-            id=u.TaskForceUpdate.id,
+            id=u.id,
             author_id=p.id,
             author_name=f"{p.first_name} {p.last_name}",
-            content=u.TaskForceUpdate.content,
-            created_at=u.TaskForceUpdate.created_at
+            content=u.content,
+            created_at=u.created_at
         )
         for u, p in updates
     ]
@@ -203,7 +211,17 @@ def add_member(project_id: int, req: MemberAdd, user: UserProfile = Depends(get_
     if not proj:
         raise HTTPException(status_code=404, detail="Progetto non trovato")
 
-    # Controllo appartenenza user invited 
+    # Verifica se l'utente che invita e' Admin o Leader del progetto
+    if user.is_admin != 1:
+        is_leader = db.query(TaskForceMember).filter(
+            TaskForceMember.project_id == project_id, 
+            TaskForceMember.user_id == user.id,
+            TaskForceMember.role == "Leader"
+        ).first()
+        if not is_leader:
+            raise HTTPException(status_code=403, detail="Solo l'Admin o il Leader del progetto possono aggiungere membri")
+
+    # Controllo esistenza user da invitare
     target_user = db.query(UserProfile).filter(UserProfile.id == req.user_id).first()
     if not target_user:
         raise HTTPException(status_code=404, detail="Utente da invitare non trovato")

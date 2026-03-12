@@ -61,12 +61,9 @@ const TaskForcePage = () => {
 
     useEffect(() => {
         fetchProjects();
-        if (user?.is_admin === 1) {
-            // Admin needs to be able to add users, grab user list. In a real app we'd have a user search endpoint.
-            // We can use the admin users endpoint if the user is admin.
-            axios.get('/api/admin/users', { headers: { Authorization: `Bearer ${localStorage.getItem('nexus_token')}` } })
-                .then(res => setAllUsers(res.data)).catch(console.error);
-        }
+        // Qualunque utente può vedere la lista operatori base per invitare
+        axios.get('/api/taskforce/operators', { headers: { Authorization: `Bearer ${localStorage.getItem('nexus_token')}` } })
+            .then(res => setAllUsers(res.data)).catch(console.error);
     }, [user]);
 
     const fetchProjects = async () => {
@@ -249,7 +246,7 @@ const TaskForcePage = () => {
                                                     </div>
                                                 </div>
                                             ))}
-                                            {user?.is_admin === 1 && (
+                                            {(user?.is_admin === 1 || selectedProject.members.some(m => m.user_id === user?.id && m.role === 'Leader')) && (
                                                 <button
                                                     onClick={() => setIsMemberModalOpen(true)}
                                                     className="w-8 h-8 rounded-full border-2 border-dashed border-neon-green/50 bg-neon-green/10 flex items-center justify-center text-neon-green hover:bg-neon-green/20 hover:scale-110 transition-all z-20"
@@ -345,7 +342,7 @@ const TaskForcePage = () => {
                     </motion.div>
                 )}
 
-                {isMemberModalOpen && user?.is_admin === 1 && (
+                {isMemberModalOpen && (user?.is_admin === 1 || selectedProject?.members.some(m => m.user_id === user?.id && m.role === 'Leader')) && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
                         <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative">
                             <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black/40">
