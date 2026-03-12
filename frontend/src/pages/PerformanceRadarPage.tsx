@@ -25,7 +25,7 @@ const PerformanceRadarPage = () => {
 
     // Carica la lista dipendenti al mount
     useEffect(() => {
-        fetch('http://localhost:8000/api/hr/performance/employees')
+        fetch('/api/hr/performance/employees')
             .then(res => res.json())
             .then(data => {
                 setEmployees(data);
@@ -39,7 +39,7 @@ const PerformanceRadarPage = () => {
         setIsLoading(true);
         setErrorMSG('');
         try {
-            const res = await fetch(`http://localhost:8000/api/hr/performance/radar/${id}`);
+            const res = await fetch(`/api/hr/performance/radar/${id}`);
             if (!res.ok) throw new Error("Errore nel recupero dati performance");
             const result = await res.json();
             setData(result);
