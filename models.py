@@ -137,3 +137,41 @@ class UserPermission(Base):
     user_id     = Column(Integer, ForeignKey("user_profiles.id"), nullable=False, index=True)
     agent_slug  = Column(String, nullable=False)
     module_slug = Column(String, nullable=True)   # NULL = access to entire agent
+
+
+# ── Task Force Manager ─────────────────────────────────────────────────────────
+
+class TaskForceProject(Base):
+    """A project inside the Task Force Manager."""
+    __tablename__ = "task_force_projects"
+
+    id          = Column(Integer, primary_key=True, index=True)
+    name        = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    status      = Column(String, default="attivo") # "attivo", "completato", "sospeso"
+    created_at  = Column(DateTime, default=datetime.utcnow)
+    created_by  = Column(Integer, ForeignKey("user_profiles.id"), nullable=False)
+
+
+class TaskForceMember(Base):
+    """Membri assegnati a un progetto della Task Force."""
+    __tablename__ = "task_force_members"
+    __table_args__ = (
+        UniqueConstraint("project_id", "user_id", name="uq_project_member"),
+    )
+
+    id         = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("task_force_projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id    = Column(Integer, ForeignKey("user_profiles.id", ondelete="CASCADE"), nullable=False, index=True)
+    role       = Column(String, default="Membro") # Es. "Leader", "Membro"
+
+
+class TaskForceUpdate(Base):
+    """Aggiornamenti/comunicazioni per un progetto."""
+    __tablename__ = "task_force_updates"
+
+    id         = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("task_force_projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    author_id  = Column(Integer, ForeignKey("user_profiles.id"), nullable=False)
+    content    = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)

@@ -9,12 +9,11 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.staticfiles import StaticFiles
 from database import engine
-from models import Base, LeadRecord, CampaignSpend, UploadBatch, CampaignMonthlyBudget, ActualSpend, UserProfile, UserPermission  # noqa: F401
+from models import Base, LeadRecord, CampaignSpend, UploadBatch, CampaignMonthlyBudget, ActualSpend, UserProfile, UserPermission, TaskForceProject, TaskForceMember, TaskForceUpdate  # noqa: F401
 
 from routers import leads_upload, leads_kpi, chat
 from routers import spend_upload, spend_kpi, spend_advanced, uploads, budgets, manual_spend, report
-from routers import hr_screening, hr_performance, hr_chat
-from routers import auth, admin, competitor
+from routers import auth, admin, competitor, taskforce
 
 app = FastAPI(
     title="AI Lead & Spend Analytics Copilot",
@@ -92,6 +91,7 @@ app.include_router(hr_chat.router)
 app.include_router(auth.router)
 app.include_router(admin.router)
 app.include_router(competitor.router)
+app.include_router(taskforce.router)
 
 
 
