@@ -103,10 +103,11 @@ def get_current_user(
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: int = payload.get("sub")
-        if user_id is None:
+        user_id_str: str = payload.get("sub")
+        if user_id_str is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token invalido")
-    except JWTError:
+        user_id = int(user_id_str)
+    except (JWTError, ValueError):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token scaduto o invalido")
     
     user = db.query(UserProfile).filter(UserProfile.id == user_id).first()
@@ -153,7 +154,7 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
         db.commit()
 
     permissions = get_user_permissions(db, user.id)
-    token = create_access_token(data={"sub": user.id})
+    token = create_access_token(data={"sub": str(user.id)})
     return TokenResponse(
         access_token=token,
         user=serialize_user(user, permissions),
@@ -168,7 +169,7 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Email o password errati")
     
     permissions = get_user_permissions(db, user.id)
-    token = create_access_token(data={"sub": user.id})
+    token = create_access_token(data={"sub": str(user.id)})
     return TokenResponse(
         access_token=token,
         user=serialize_user(user, permissions),
