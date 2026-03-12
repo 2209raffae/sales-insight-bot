@@ -102,3 +102,38 @@ class CampaignMonthlyBudget(Base):
     month          = Column(Integer, nullable=False, index=True)  # 1-12
     planned_budget = Column(Float, nullable=False)
     created_at     = Column(DateTime, default=datetime.utcnow)
+
+
+# ── Auth: User Profiles ────────────────────────────────────────────────────────
+
+class UserProfile(Base):
+    """Platform user with login credentials and role."""
+    __tablename__ = "user_profiles"
+
+    id         = Column(Integer, primary_key=True, index=True)
+    email      = Column(String, unique=True, nullable=False, index=True)
+    hashed_pw  = Column(String, nullable=False)
+    first_name = Column(String, nullable=False)
+    last_name  = Column(String, nullable=False)
+    role       = Column(String, nullable=False, default="Utente")   # es: "Direttore", "Commerciale"
+    is_admin   = Column(Integer, default=0)   # 1 = admin, 0 = normal (Integer per compat SQLite/PG)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+# ── Auth: Granular Permissions ─────────────────────────────────────────────────
+
+class UserPermission(Base):
+    """
+    Defines which agent/module a user can access.
+    agent_slug examples: 'sales-insight', 'hr-copilot', 'competitor-radar', 'task-force'
+    module_slug examples: 'leads', 'upload', 'chat', 'screening', 'performance' (NULL = all modules)
+    """
+    __tablename__ = "user_permissions"
+    __table_args__ = (
+        UniqueConstraint("user_id", "agent_slug", "module_slug", name="uq_user_permission"),
+    )
+
+    id          = Column(Integer, primary_key=True, index=True)
+    user_id     = Column(Integer, ForeignKey("user_profiles.id"), nullable=False, index=True)
+    agent_slug  = Column(String, nullable=False)
+    module_slug = Column(String, nullable=True)   # NULL = access to entire agent

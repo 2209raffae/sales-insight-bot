@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, KeyboardEvent } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import type { KeyboardEvent } from 'react';
 import { motion } from 'framer-motion';
 import { Bot, Send, User, ChevronRight } from 'lucide-react';
 

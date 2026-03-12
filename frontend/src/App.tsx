@@ -1,9 +1,10 @@
 import { BrowserRouter, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import {
   Bot, Database, ChevronLeft, Users, DollarSign, Target, FileText,
-  ArrowRight, Activity, Zap, Box, Headset, Scale, Megaphone, Briefcase
+  ArrowRight, Activity, Zap, Box, Headset, Scale, Megaphone, Briefcase, Shield, LogOut
 } from 'lucide-react';
 import React, { useEffect, useRef } from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Pagina Agenti Esistenti
 import UploadPage from './pages/UploadPage';
@@ -17,6 +18,11 @@ import ChatPage from './pages/ChatPage';
 import TalentScreeningPage from './pages/TalentScreeningPage';
 import PerformanceRadarPage from './pages/PerformanceRadarPage';
 import PolicyBotPage from './pages/PolicyBotPage';
+
+// Auth Pages
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import AdminPanel from './pages/AdminPanel';
 
 // ─── Particles Canvas ────────────────────────────────────────────────────────
 const ParticleCanvas = () => {
@@ -59,7 +65,6 @@ const ParticleCanvas = () => {
         ctx.fillStyle = `rgba(0,210,255,${p.alpha})`;
         ctx.fill();
       });
-      // lines between close particles
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x;
@@ -175,10 +180,52 @@ const MenuGrid = ({ title, subtitle, items, tag }: { title: React.ReactNode, sub
   </div>
 );
 
+// ─── Route Guard ──────────────────────────────────────────────────────────────
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-neon-blue/30 border-t-neon-blue rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+// ─── User Badge (Navbar) ──────────────────────────────────────────────────────
+const UserBadge = () => {
+  const { user, logout } = useAuth();
+  if (!user) return null;
+
+  return (
+    <div className="fixed top-4 right-4 sm:top-6 sm:right-6 z-50 flex items-center gap-2 bg-black/60 backdrop-blur-md border border-white/10 rounded-full px-3 py-1.5 shadow-lg">
+      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-neon-blue/30 to-neon-purple/30 border border-white/10 flex items-center justify-center text-[10px] font-bold text-white">
+        {user.first_name[0]}{user.last_name[0]}
+      </div>
+      <span className="text-[11px] text-slate-300 font-semibold hidden sm:block">{user.first_name}</span>
+      {user.is_admin === 1 && (
+        <Link to="/admin" className="text-neon-amber hover:text-neon-amber/80 transition-colors" title="Admin Panel">
+          <Shield size={14} />
+        </Link>
+      )}
+      <button onClick={logout} className="text-slate-400 hover:text-red-400 transition-colors" title="Logout">
+        <LogOut size={14} />
+      </button>
+    </div>
+  );
+};
+
 // ─── Data & Views ─────────────────────────────────────────────────────────────
 const NEXUS_AGENTS: NavItem[] = [
   { icon: Activity, label: 'Sales Insight', desc: 'Intelligence commerciale e previsioni vendite', to: '/sales-insight', accent: '#00d2ff', glow: 'rgba(0,210,255,0.35)', badge: 'ACTIVE' },
-  { icon: Users, label: 'HR & Talent Copilot', desc: 'Performance dipendenti, CV screening, policy bot', to: '/hr-copilot', accent: '#a855f7', glow: 'rgba(168,85,247,0.35)', badge: 'NEW' },
+  { icon: Users, label: 'HR & Talent Copilot', desc: 'Performance dipendenti, CV screening, policy bot', to: '/hr-copilot', accent: '#a855f7', glow: 'rgba(168,85,247,0.35)', badge: 'ACTIVE' },
   { icon: Box, label: 'Supply Chain AI', desc: 'Ottimizzazione magazzino e logistica predittiva', to: '#', disabled: true, accent: '#10b981', glow: 'rgba(16,185,129,0.35)', badge: 'SOON' },
   { icon: Headset, label: 'Customer Sentinel', desc: 'Analisi ticket e assistenza L1 automatizzata', to: '#', disabled: true, accent: '#f59e0b', glow: 'rgba(245,158,11,0.35)', badge: 'SOON' },
   { icon: Scale, label: 'Legal Radar', desc: 'Scansione contratti e compliance normativa', to: '#', disabled: true, accent: '#ef4444', glow: 'rgba(239,68,68,0.35)', badge: 'SOON' },
@@ -227,15 +274,13 @@ const HRCopilotHub = () => (
   />
 );
 
-// Unused placeholders rimossi per non bloccare Typescript
-
 
 // ─── App Shell ────────────────────────────────────────────────────────────────
 const LayoutContent = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
+  const { user } = useAuth();
   const path = location.pathname;
 
-  // Logic to determine where the "Back" button should go, and if it should show
   let backTo = '';
   let backLabel = '';
 
@@ -248,19 +293,24 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
   } else if (path === '/sales-insight' || path === '/hr-copilot') {
     backTo = '/';
     backLabel = 'Nexus Hub';
+  } else if (path === '/admin') {
+    backTo = '/';
+    backLabel = 'Nexus Hub';
   }
 
-  // Se siamo in un "interno" (non su un hub), aggiungiamo padding e sfondo scuro
   const isAgentHub = path === '/' || path === '/sales-insight' || path === '/hr-copilot';
+  const isAuthPage = path === '/login' || path === '/register';
 
   return (
     <div className="min-h-screen w-full text-white font-sans relative overflow-x-hidden pt-2 pb-16">
       <ParticleCanvas />
 
-      {/* dark grid texture */}
       <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0, backgroundImage: 'linear-gradient(rgba(0,210,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,210,255,0.03) 1px,transparent 1px)', backgroundSize: '60px 60px' }} />
 
-      {backTo && (
+      {/* User badge - top right */}
+      {user && !isAuthPage && <UserBadge />}
+
+      {backTo && !isAuthPage && (
         <Link
           to={backTo}
           className="fixed top-4 left-4 sm:top-6 sm:left-6 z-50 flex items-center gap-2 text-[#00d2ff] hover:text-white transition-all bg-black/60 px-4 py-2 rounded-full border border-[#00d2ff]/20 backdrop-blur-md shadow-[0_0_18px_rgba(0,210,255,0.25)] pointer-events-auto"
@@ -270,8 +320,7 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
         </Link>
       )}
 
-      {/* page content */}
-      <div className={`relative z-10 w-full min-h-screen flex flex-col items-center ${!isAgentHub ? 'bg-black/60 backdrop-blur-md pt-20 px-4' : 'pt-10'}`}>
+      <div className={`relative z-10 w-full min-h-screen flex flex-col items-center ${!isAgentHub && !isAuthPage ? 'bg-black/60 backdrop-blur-md pt-20 px-4' : isAuthPage ? '' : 'pt-10'}`}>
         <div className={`w-full ${isAgentHub ? 'max-w-5xl' : 'max-w-7xl'} mx-auto`}>
           <main className="w-full flex justify-center">{children}</main>
         </div>
@@ -280,32 +329,43 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
+const AppRoutes = () => (
+  <LayoutContent>
+    <Routes>
+      {/* Auth Pages (public) */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+
+      {/* Protected Routes */}
+      <Route path="/" element={<ProtectedRoute><NexusHub /></ProtectedRoute>} />
+      <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+
+      {/* Agente: Sales Insight */}
+      <Route path="/sales-insight" element={<ProtectedRoute><SalesInsightHub /></ProtectedRoute>} />
+      <Route path="/sales-insight/upload" element={<ProtectedRoute><UploadPage /></ProtectedRoute>} />
+      <Route path="/sales-insight/leads" element={<ProtectedRoute><LeadsPage /></ProtectedRoute>} />
+      <Route path="/sales-insight/spend" element={<ProtectedRoute><SpendPage /></ProtectedRoute>} />
+      <Route path="/sales-insight/budgets" element={<ProtectedRoute><BudgetsPage /></ProtectedRoute>} />
+      <Route path="/sales-insight/report" element={<ProtectedRoute><ReportPage /></ProtectedRoute>} />
+      <Route path="/sales-insight/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+
+      {/* Agente: HR Copilot */}
+      <Route path="/hr-copilot" element={<ProtectedRoute><HRCopilotHub /></ProtectedRoute>} />
+      <Route path="/hr-copilot/screening" element={<ProtectedRoute><TalentScreeningPage /></ProtectedRoute>} />
+      <Route path="/hr-copilot/performance" element={<ProtectedRoute><PerformanceRadarPage /></ProtectedRoute>} />
+      <Route path="/hr-copilot/chat" element={<ProtectedRoute><PolicyBotPage /></ProtectedRoute>} />
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  </LayoutContent>
+);
+
 const App = () => (
   <BrowserRouter>
-    <LayoutContent>
-      <Routes>
-        {/* Hub Principale */}
-        <Route path="/" element={<NexusHub />} />
-
-        {/* Agente: Sales Insight */}
-        <Route path="/sales-insight" element={<SalesInsightHub />} />
-        <Route path="/sales-insight/upload" element={<UploadPage />} />
-        <Route path="/sales-insight/leads" element={<LeadsPage />} />
-        <Route path="/sales-insight/spend" element={<SpendPage />} />
-        <Route path="/sales-insight/budgets" element={<BudgetsPage />} />
-        <Route path="/sales-insight/report" element={<ReportPage />} />
-        <Route path="/sales-insight/chat" element={<ChatPage />} />
-
-        {/* Agente: HR Copilot (Attivo) */}
-        <Route path="/hr-copilot" element={<HRCopilotHub />} />
-        <Route path="/hr-copilot/screening" element={<TalentScreeningPage />} />
-        <Route path="/hr-copilot/performance" element={<PerformanceRadarPage />} />
-        <Route path="/hr-copilot/chat" element={<PolicyBotPage />} />
-
-        {/* Fallback origin pointer */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </LayoutContent>
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
   </BrowserRouter>
 );
 
