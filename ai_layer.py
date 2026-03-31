@@ -1,4 +1,4 @@
-﻿"""
+"""
 AI layer - sends computed KPI results to Groq for explanation & recommendations.
 The LLM NEVER computes metrics; it only interprets pre-computed JSON.
 """
@@ -132,3 +132,60 @@ Sii professionale ma conciso. Usa l'italiano. Se ci sono pochi dati (es. solo 1 
         return response.choices[0].message.content or "Nessuna previsione generata."
     except Exception as e:
         return f"Errore durante la generazione della previsione AI: {str(e)}"
+
+
+def match_problem_to_expertise(
+    problem_description: str,
+    categories: list[dict],
+    model: str | None = None,
+) -> list[int]:
+    """
+    Given a problem description and a list of available categories (id, name),
+    returns a list of IDs of categories that match the problem.
+    """
+    client = _get_client()
+    model = model or os.getenv("MODEL", "llama-3.1-8b-instant")
+
+    # categories is list of {"id": int, "name": str}
+    categories_str = "\n".join([f"- {c['id']}: {c['name']}" for c in categories])
+
+    context = f"""
+Abbiamo un problema tecnico o di business descritto così:
+---
+{problem_description}
+---
+
+Abbiamo le seguenti categorie di competenza disponibili nel sistema:
+{categories_str}
+
+Identifica quali di queste categorie sono PARTI NECESSARIE per risolvere il problema. 
+Restituisci SOLO un array JSON di interi contenente gli ID delle categorie selezionate.
+Esempio: [1, 4, 12]
+
+Se nessuna categoria è pertinente, restituisci un array vuoto [].
+Non aggiungere spiegazioni, restituisci solo il JSON.
+"""
+
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "Sei un coordinatore tecnico che assegna task ai team giusti in base alle loro competenze."},
+                {"role": "user", "content": context},
+            ],
+            temperature=0.0, # Deterministic
+            max_tokens=100,
+        )
+        content = response.choices[0].message.content or "[]"
+        # Clean potential markdown
+        if "```" in content:
+            content = content.split("```")[1]
+            if content.startswith("json"):
+                content = content[4:]
+        
+        selected_ids = json.loads(content.strip())
+        if isinstance(selected_ids, list):
+            return [int(sid) for sid in selected_ids if isinstance(sid, (int, str)) and str(sid).isdigit()]
+        return []
+    except Exception:
+        return []

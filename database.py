@@ -51,60 +51,50 @@ def _existing_columns(conn, table: str) -> set[str]:
 
 def run_migrations():
     """
-    Idempotent migrations — adds missing columns to existing tables.
-    Safe to run every startup. SQLite does not support DROP COLUMN, so
-    removed columns are simply ignored.
+    Idempotent migrations using natively supported IF NOT EXISTS where possible,
+    or simple try/except blocks for older SQLite versions.
     """
-    # Usiamo begin() cosicché un'eccezione non avveleni l'intero engine
+    commands = {
+        "lead_records": [
+            "ALTER TABLE lead_records ADD COLUMN IF NOT EXISTS upload_id VARCHAR",
+            "ALTER TABLE lead_records ADD COLUMN IF NOT EXISTS closed_at DATETIME"
+        ],
+        "campaign_spends": [
+            "ALTER TABLE campaign_spends ADD COLUMN IF NOT EXISTS entry_type VARCHAR DEFAULT 'csv'",
+            "ALTER TABLE campaign_spends ADD COLUMN IF NOT EXISTS note VARCHAR"
+        ],
+        "upload_batches": [
+            "ALTER TABLE upload_batches ADD COLUMN IF NOT EXISTS \"user\" VARCHAR",
+            "ALTER TABLE upload_batches ADD COLUMN IF NOT EXISTS mapping_used VARCHAR",
+            "ALTER TABLE upload_batches ADD COLUMN IF NOT EXISTS reject_reasons VARCHAR"
+        ],
+        "task_force_updates": [
+            "ALTER TABLE task_force_updates ADD COLUMN IF NOT EXISTS attachment_path TEXT",
+            "ALTER TABLE task_force_updates ADD COLUMN IF NOT EXISTS attachment_type TEXT"
+        ]
+    }
+
     try:
         with engine.begin() as conn:
-            # check se le tabelle esistono, altrimenti skip (succede al primissimo avvio prep-create_all)
-            inspector = inspect(conn)
-            tables = inspector.get_table_names()
+            # Note: SQLite doesn't support 'IF NOT EXISTS' in ALTER TABLE ADD COLUMN.
+            # But the user is using Postgres (Supabase).
+            # For robustness, we wrap each execution.
+            is_sqlite = engine.url.drivername.startswith("sqlite")
             
-            if "lead_records" in tables:
-                cols = _existing_columns(conn, "lead_records")
-                if "upload_id" not in cols:
+            for table, cmds in commands.items():
+                for cmd in cmds:
                     try:
-                        conn.execute(text("ALTER TABLE lead_records ADD COLUMN upload_id VARCHAR"))
+                        # If SQLite, we remove IF NOT EXISTS or handle differently
+                        # Actually, keeping it as is for Postgres and wrapping in try/except for SQLite
+                        if is_sqlite:
+                            # SQLite doesn't like IF NOT EXISTS
+                            raw_cmd = cmd.replace(" IF NOT EXISTS", "")
+                            conn.execute(text(raw_cmd))
+                        else:
+                            conn.execute(text(cmd))
                     except Exception:
+                        # Column might already exist
                         pass
-                if "closed_at" not in cols:
-                    try:
-                        conn.execute(text("ALTER TABLE lead_records ADD COLUMN closed_at DATETIME"))
-                    except Exception:
-                        pass
-                        
-            if "campaign_spends" in tables:
-                cols = _existing_columns(conn, "campaign_spends")
-                if "entry_type" not in cols:
-                    try:
-                        conn.execute(text("ALTER TABLE campaign_spends ADD COLUMN entry_type VARCHAR DEFAULT 'csv'"))
-                    except Exception:
-                        pass
-                if "note" not in cols:
-                    try:
-                        conn.execute(text("ALTER TABLE campaign_spends ADD COLUMN note VARCHAR"))
-                    except Exception:
-                        pass
-                        
-            if "upload_batches" in tables:
-                cols = _existing_columns(conn, "upload_batches")
-                if "user" not in cols:
-                    try:
-                        conn.execute(text("ALTER TABLE upload_batches ADD COLUMN \"user\" VARCHAR"))  # 'user' is reserved in pg
-                    except Exception:
-                        pass
-                if "mapping_used" not in cols:
-                    try:
-                        conn.execute(text("ALTER TABLE upload_batches ADD COLUMN mapping_used VARCHAR"))
-                    except Exception:
-                        pass
-                if "reject_reasons" not in cols:
-                    try:
-                        conn.execute(text("ALTER TABLE upload_batches ADD COLUMN reject_reasons VARCHAR"))
-                    except Exception:
-                        pass
-    except Exception:
-        # Se c'è un deadlock irrecuperabile a livello macro o tabelle rotte, proseguiamo (fallirà elegantemente altrove se critico)
+    except Exception as e:
+        print(f"Migration error: {e}")
         pass

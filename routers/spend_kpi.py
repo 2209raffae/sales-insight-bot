@@ -1,4 +1,4 @@
-﻿"""
+"""
 Spend KPI router - deterministic spend metric endpoints.
 Primary endpoint:
   GET /api/kpi/spend/summary?from=YYYY-MM-DD&to=YYYY-MM-DD&mode=actual|planned|both
@@ -43,7 +43,8 @@ def spend_by_source(
     mode: str = Query("both", description="actual | imported | both"),
     db: Session = Depends(get_db),
 ):
-    return ske.kpi_spend_by_source(db, from_date, to_date, mode=mode)
+    payload = ske.kpi_spend_by_source(db, from_date, to_date, mode=mode)
+    return JSONResponse(content=sanitize_for_json(payload))
 
 
 @router.get("/cpl")
@@ -53,7 +54,8 @@ def cost_per_lead(
     mode: str = Query("both", description="actual | imported | both"),
     db: Session = Depends(get_db),
 ):
-    return ske.kpi_cpl_by_source(db, from_date, to_date, mode=mode)
+    payload = ske.kpi_cpl_by_source(db, from_date, to_date, mode=mode)
+    return JSONResponse(content=sanitize_for_json(payload))
 
 
 @router.get("/cost-per-winning")
@@ -64,7 +66,8 @@ def cost_per_winning(
     mode: str = Query("both", description="actual | imported | both"),
     db: Session = Depends(get_db),
 ):
-    return ske.kpi_cost_per_winning(db, from_date, to_date, _winning_set(winning), mode=mode)
+    payload = ske.kpi_cost_per_winning(db, from_date, to_date, _winning_set(winning), mode=mode)
+    return JSONResponse(content=sanitize_for_json(payload))
 
 
 @router.get("/alerts")
@@ -75,9 +78,10 @@ def overspending_alerts(
     mode: str = Query("both", description="actual | imported | both"),
     db: Session = Depends(get_db),
 ):
-    return ske.kpi_overspending_alerts(
+    payload = ske.kpi_overspending_alerts(
         db, from_date, to_date, _winning_set(winning), min_spend_threshold=0.0, mode=mode
     )
+    return JSONResponse(content=sanitize_for_json(payload))
 
 
 @router.get("/trend")
@@ -87,7 +91,8 @@ def monthly_trend(
     to_date: str | None = Query(None, alias="to"),
     db: Session = Depends(get_db),
 ):
-    return ske.kpi_monthly_spend_trend(db, mode, from_date, to_date)
+    payload = ske.kpi_monthly_spend_trend(db, mode, from_date, to_date)
+    return JSONResponse(content=sanitize_for_json(payload))
 
 
 @router.get("/summary")

@@ -186,7 +186,7 @@ const MenuGrid = ({ title, subtitle, items, tag }: { title: React.ReactNode, sub
   </div>
 );
 
-// ─── Route Guard ──────────────────────────────────────────────────────────────
+// ─── Route Guards ──────────────────────────────────────────────────────────────
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
 
@@ -202,6 +202,16 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace />;
   }
 
+  return <>{children}</>;
+};
+
+const PermissionGuard = ({ agent, children }: { agent: string, children: React.ReactNode }) => {
+  const { hasAccess, isLoading } = useAuth();
+  
+  if (isLoading) return null;
+  if (!hasAccess(agent)) {
+    return <Navigate to="/" replace />;
+  }
   return <>{children}</>;
 };
 
@@ -229,11 +239,23 @@ const UserBadge = () => {
 };
 
 // ─── Data & Views ─────────────────────────────────────────────────────────────
+interface NavItem {
+  icon: React.ElementType;
+  label: string;
+  desc: string;
+  to: string;
+  accent: string;
+  glow: string;
+  slug?: string;
+  badge?: string;
+  disabled?: boolean;
+}
+
 const NEXUS_AGENTS: NavItem[] = [
-  { icon: Activity, label: 'Sales Insight', desc: 'Intelligence commerciale e previsioni vendite', to: '/sales-insight', accent: '#00d2ff', glow: 'rgba(0,210,255,0.35)', badge: 'ACTIVE' },
-  { icon: Users, label: 'HR & Talent Copilot', desc: 'Performance dipendenti, CV screening, policy bot', to: '/hr-copilot', accent: '#a855f7', glow: 'rgba(168,85,247,0.35)', badge: 'ACTIVE' },
-  { icon: Target, label: 'Competitor Radar', desc: 'Analisi concorrenza AI e battle cards strategiche', to: '/competitor-radar', accent: '#f59e0b', glow: 'rgba(245,158,11,0.35)', badge: 'NEW' },
-  { icon: Shield, label: 'Task Force Manager', desc: 'Gestione progetti critici e update email AI', to: '/task-force', accent: '#10b981', glow: 'rgba(16,185,129,0.35)', badge: 'NEW' },
+  { icon: Activity, label: 'Sales Insight', desc: 'Intelligence commerciale e previsioni vendite', to: '/sales-insight', accent: '#00d2ff', glow: 'rgba(0,210,255,0.35)', badge: 'ACTIVE', slug: 'sales-insight' },
+  { icon: Users, label: 'HR & Talent Copilot', desc: 'Performance dipendenti, CV screening, policy bot', to: '/hr-copilot', accent: '#a855f7', glow: 'rgba(168,85,247,0.35)', badge: 'ACTIVE', slug: 'hr-copilot' },
+  { icon: Target, label: 'Competitor Radar', desc: 'Analisi concorrenza AI e battle cards strategiche', to: '/competitor-radar', accent: '#f59e0b', glow: 'rgba(245,158,11,0.35)', badge: 'NEW', slug: 'competitor-radar' },
+  { icon: Shield, label: 'Task Force Manager', desc: 'Gestione progetti critici e update email AI', to: '/task-force', accent: '#10b981', glow: 'rgba(16,185,129,0.35)', badge: 'NEW', slug: 'task-force' },
 ];
 
 const SALES_MODULES: NavItem[] = [
@@ -252,13 +274,18 @@ const HR_MODULES: NavItem[] = [
 ];
 
 // ─── Pages ────────────────────────────────────────────────────────────────────
-const NexusHub = () => (
-  <MenuGrid
-    title={<>Nexus<span className="hero-accent">Hub</span></>}
-    subtitle="Ecosistema di intelligenza artificiale aziendale: seleziona il tuo agente."
-    items={NEXUS_AGENTS}
-  />
-);
+const NexusHub = () => {
+  const { hasAccess } = useAuth();
+  const filtered = NEXUS_AGENTS.filter(a => a.slug && hasAccess(a.slug));
+
+  return (
+    <MenuGrid
+      title={<>Nexus<span className="hero-accent">Hub</span></>}
+      subtitle="Ecosistema di intelligenza artificiale aziendale: seleziona il tuo agente."
+      items={filtered}
+    />
+  );
+};
 
 const SalesInsightHub = () => (
   <MenuGrid
@@ -345,25 +372,25 @@ const AppRoutes = () => (
       <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
 
       {/* Agente: Sales Insight */}
-      <Route path="/sales-insight" element={<ProtectedRoute><SalesInsightHub /></ProtectedRoute>} />
-      <Route path="/sales-insight/upload" element={<ProtectedRoute><UploadPage /></ProtectedRoute>} />
-      <Route path="/sales-insight/leads" element={<ProtectedRoute><LeadsPage /></ProtectedRoute>} />
-      <Route path="/sales-insight/spend" element={<ProtectedRoute><SpendPage /></ProtectedRoute>} />
-      <Route path="/sales-insight/budgets" element={<ProtectedRoute><BudgetsPage /></ProtectedRoute>} />
-      <Route path="/sales-insight/report" element={<ProtectedRoute><ReportPage /></ProtectedRoute>} />
-      <Route path="/sales-insight/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+      <Route path="/sales-insight" element={<ProtectedRoute><PermissionGuard agent="sales-insight"><SalesInsightHub /></PermissionGuard></ProtectedRoute>} />
+      <Route path="/sales-insight/upload" element={<ProtectedRoute><PermissionGuard agent="sales-insight"><UploadPage /></PermissionGuard></ProtectedRoute>} />
+      <Route path="/sales-insight/leads" element={<ProtectedRoute><PermissionGuard agent="sales-insight"><LeadsPage /></PermissionGuard></ProtectedRoute>} />
+      <Route path="/sales-insight/spend" element={<ProtectedRoute><PermissionGuard agent="sales-insight"><SpendPage /></PermissionGuard></ProtectedRoute>} />
+      <Route path="/sales-insight/budgets" element={<ProtectedRoute><PermissionGuard agent="sales-insight"><BudgetsPage /></PermissionGuard></ProtectedRoute>} />
+      <Route path="/sales-insight/report" element={<ProtectedRoute><PermissionGuard agent="sales-insight"><ReportPage /></PermissionGuard></ProtectedRoute>} />
+      <Route path="/sales-insight/chat" element={<ProtectedRoute><PermissionGuard agent="sales-insight"><ChatPage /></PermissionGuard></ProtectedRoute>} />
 
       {/* Agente: HR Copilot */}
-      <Route path="/hr-copilot" element={<ProtectedRoute><HRCopilotHub /></ProtectedRoute>} />
-      <Route path="/hr-copilot/screening" element={<ProtectedRoute><TalentScreeningPage /></ProtectedRoute>} />
-      <Route path="/hr-copilot/performance" element={<ProtectedRoute><PerformanceRadarPage /></ProtectedRoute>} />
-      <Route path="/hr-copilot/chat" element={<ProtectedRoute><PolicyBotPage /></ProtectedRoute>} />
+      <Route path="/hr-copilot" element={<ProtectedRoute><PermissionGuard agent="hr-copilot"><HRCopilotHub /></PermissionGuard></ProtectedRoute>} />
+      <Route path="/hr-copilot/screening" element={<ProtectedRoute><PermissionGuard agent="hr-copilot"><TalentScreeningPage /></PermissionGuard></ProtectedRoute>} />
+      <Route path="/hr-copilot/performance" element={<ProtectedRoute><PermissionGuard agent="hr-copilot"><PerformanceRadarPage /></PermissionGuard></ProtectedRoute>} />
+      <Route path="/hr-copilot/chat" element={<ProtectedRoute><PermissionGuard agent="hr-copilot"><PolicyBotPage /></PermissionGuard></ProtectedRoute>} />
 
       {/* Agente: Competitor Radar */}
-      <Route path="/competitor-radar" element={<ProtectedRoute><CompetitorRadarPage /></ProtectedRoute>} />
+      <Route path="/competitor-radar" element={<ProtectedRoute><PermissionGuard agent="competitor-radar"><CompetitorRadarPage /></PermissionGuard></ProtectedRoute>} />
 
       {/* Agente: Task Force Manager */}
-      <Route path="/task-force" element={<ProtectedRoute><TaskForcePage /></ProtectedRoute>} />
+      <Route path="/task-force" element={<ProtectedRoute><PermissionGuard agent="task-force"><TaskForcePage /></PermissionGuard></ProtectedRoute>} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

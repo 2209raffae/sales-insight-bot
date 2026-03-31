@@ -12,7 +12,7 @@ import bcrypt
 from jose import jwt, JWTError
 
 from database import get_db
-from models import UserProfile, UserPermission
+from models import UserProfile, UserPermission, ExpertiseCategory, UserExpertise
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
@@ -48,6 +48,7 @@ class UserOut(BaseModel):
     role: str
     is_admin: int
     permissions: list
+    expertise: list = []
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -74,7 +75,11 @@ def get_user_permissions(db: Session, user_id: int) -> list:
     perms = db.query(UserPermission).filter(UserPermission.user_id == user_id).all()
     return [{"agent_slug": p.agent_slug, "module_slug": p.module_slug} for p in perms]
 
-def serialize_user(user: UserProfile, permissions: list) -> dict:
+def get_user_expertise(db: Session, user_id: int) -> list:
+    exp = db.query(ExpertiseCategory).join(UserExpertise, ExpertiseCategory.id == UserExpertise.category_id).filter(UserExpertise.user_id == user_id).all()
+    return [{"id": e.id, "name": e.name} for e in exp]
+
+def serialize_user(user: UserProfile, permissions: list, expertise: list = None) -> dict:
     return {
         "id": user.id,
         "email": user.email,
@@ -83,6 +88,7 @@ def serialize_user(user: UserProfile, permissions: list) -> dict:
         "role": user.role,
         "is_admin": user.is_admin,
         "permissions": permissions,
+        "expertise": expertise or [],
     }
 
 
@@ -154,10 +160,11 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
         db.commit()
 
     permissions = get_user_permissions(db, user.id)
+    expertise = get_user_expertise(db, user.id)
     token = create_access_token(data={"sub": str(user.id)})
     return TokenResponse(
         access_token=token,
-        user=serialize_user(user, permissions),
+        user=serialize_user(user, permissions, expertise),
     )
 
 
@@ -182,4 +189,5 @@ def get_me(
     db: Session = Depends(get_db),
 ):
     permissions = get_user_permissions(db, user.id)
-    return serialize_user(user, permissions)
+    expertise = get_user_expertise(db, user.id)
+    return serialize_user(user, permissions, expertise)

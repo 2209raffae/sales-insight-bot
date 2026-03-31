@@ -7,8 +7,12 @@ from pydantic import BaseModel
 from typing import Optional, List
 
 from database import get_db
-from models import UserProfile, UserPermission
-from routers.auth import require_admin, get_user_permissions, hash_password
+from database import get_db
+from models import UserProfile, UserPermission, ExpertiseCategory, UserExpertise
+from routers.auth import (
+    require_admin, get_user_permissions, get_user_expertise, 
+    hash_password, serialize_user
+)
 
 router = APIRouter(prefix="/api/admin", tags=["Admin"])
 
@@ -22,36 +26,36 @@ class PermissionIn(BaseModel):
 class SetPermissionsRequest(BaseModel):
     permissions: List[PermissionIn]
 
+class ExpertiseCategoryIn(BaseModel):
+    name: str
+
+class ExpertiseCategoryOut(BaseModel):
+    id: int
+    name: str
+
 class UpdateUserRequest(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     role: Optional[str] = None
     is_admin: Optional[int] = None
     password: Optional[str] = None
+    expertise_ids: Optional[List[int]] = None
 
 
-# ── Routes ─────────────────────────────────────────────────────────────────────
+# ── Routes: Users ─────────────────────────────────────────────────────────────
 
 @router.get("/users")
 def list_users(
     admin: UserProfile = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
-    """List all users with their permissions."""
+    """List all users with their permissions and expertise."""
     users = db.query(UserProfile).order_by(UserProfile.created_at.desc()).all()
     result = []
     for u in users:
         perms = get_user_permissions(db, u.id)
-        result.append({
-            "id": u.id,
-            "email": u.email,
-            "first_name": u.first_name,
-            "last_name": u.last_name,
-            "role": u.role,
-            "is_admin": u.is_admin,
-            "created_at": u.created_at.isoformat() if u.created_at else None,
-            "permissions": perms,
-        })
+        exp = get_user_expertise(db, u.id)
+        result.append(serialize_user(u, perms, exp))
     return result
 
 
@@ -62,7 +66,7 @@ def update_user(
     admin: UserProfile = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
-    """Update user profile fields (admin only)."""
+    """Update user profile fields and expertise (admin only)."""
     user = db.query(UserProfile).filter(UserProfile.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Utente non trovato")
@@ -78,18 +82,23 @@ def update_user(
     if req.password is not None and req.password.strip():
         user.hashed_pw = hash_password(req.password)
 
+    # Expertise update
+    if req.expertise_ids is not None:
+        # Delete old associations
+        db.query(UserExpertise).filter(UserExpertise.user_id == user_id).delete()
+        # Add new ones
+        for cat_id in req.expertise_ids:
+            # check if category exists
+            cat = db.query(ExpertiseCategory).filter(ExpertiseCategory.id == cat_id).first()
+            if cat:
+                db.add(UserExpertise(user_id=user_id, category_id=cat_id))
+
     db.commit()
     db.refresh(user)
+    
     perms = get_user_permissions(db, user.id)
-    return {
-        "id": user.id,
-        "email": user.email,
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-        "role": user.role,
-        "is_admin": user.is_admin,
-        "permissions": perms,
-    }
+    exp = get_user_expertise(db, user.id)
+    return serialize_user(user, perms, exp)
 
 
 @router.delete("/users/{user_id}")
@@ -108,6 +117,7 @@ def delete_user(
         raise HTTPException(status_code=400, detail="Non puoi eliminare te stesso")
 
     db.query(UserPermission).filter(UserPermission.user_id == user_id).delete()
+    db.query(UserExpertise).filter(UserExpertise.user_id == user_id).delete()
     db.delete(user)
     db.commit()
     return {"detail": "Utente eliminato"}
@@ -138,3 +148,48 @@ def set_permissions(
 
     db.commit()
     return get_user_permissions(db, user_id)
+
+
+# ── Routes: Expertise Categories ─────────────────────────────────────────────
+
+@router.get("/categories", response_model=List[ExpertiseCategoryOut])
+def list_categories(
+    admin: UserProfile = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """List all expertise categories."""
+    return db.query(ExpertiseCategory).order_by(ExpertiseCategory.name.asc()).all()
+
+
+@router.post("/categories", response_model=ExpertiseCategoryOut)
+def create_category(
+    req: ExpertiseCategoryIn,
+    admin: UserProfile = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """Create a new expertise category."""
+    existing = db.query(ExpertiseCategory).filter(ExpertiseCategory.name == req.name.strip()).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Categoria già esistente")
+    
+    cat = ExpertiseCategory(name=req.name.strip())
+    db.add(cat)
+    db.commit()
+    db.refresh(cat)
+    return cat
+
+
+@router.delete("/categories/{cat_id}")
+def delete_category(
+    cat_id: int,
+    admin: UserProfile = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """Delete a category (associations in UserExpertise are cascaded)."""
+    cat = db.query(ExpertiseCategory).filter(ExpertiseCategory.id == cat_id).first()
+    if not cat:
+        raise HTTPException(status_code=404, detail="Categoria non trovata")
+    
+    db.delete(cat)
+    db.commit()
+    return {"detail": "Categoria eliminata"}

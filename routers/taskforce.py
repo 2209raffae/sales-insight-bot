@@ -7,8 +7,12 @@ from typing import List, Optional
 from datetime import datetime
 
 from database import get_db
-from models import TaskForceProject, TaskForceMember, TaskForceUpdate, UserProfile
-from routers.auth import get_current_user
+from models import (
+    TaskForceProject, TaskForceMember, TaskForceUpdate, UserProfile,
+    ExpertiseCategory, UserExpertise
+)
+from routers.auth import get_current_user, require_admin
+from ai_layer import match_problem_to_expertise
 
 router = APIRouter(prefix="/api/taskforce", tags=["Task Force Manager"])
 
@@ -52,11 +56,23 @@ class UpdateOut(BaseModel):
     author_id: int
     author_name: str
     content: str
+    attachment_path: Optional[str] = None
+    attachment_type: Optional[str] = None
     created_at: datetime
 
 class ProjectDetailOut(ProjectOut):
     members: List[MemberOut]
     updates: List[UpdateOut]
+
+class SuggestMembersRequest(BaseModel):
+    description: str
+
+class SuggestResult(BaseModel):
+    user_id: int
+    first_name: str
+    last_name: str
+    email: str
+    matched_categories: List[str]
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -99,7 +115,7 @@ def send_update_email(project_name: str, update_content: str, author_name: str, 
         # Es: "onboarding@resend.dev" se non hai un dominio personalizzato configurato regolarmente.
         
         params = {
-            "from": "Nexus Hub <onboarding@resend.dev>", # Adjust this depending on your Resend setup
+            "from": "Nexus Hub <onboarding@resend.dev>", 
             "to": recipients,
             "subject": f"[{project_name}] Nuovo Aggiornamento Task Force",
             "html": html_content
@@ -233,6 +249,18 @@ def update_project_status(project_id: int, req: ProjectStatusUpdate, user: UserP
     return proj
 
 
+@router.delete("/projects/{project_id}")
+def delete_project(project_id: int, user: UserProfile = Depends(require_admin), db: Session = Depends(get_db)):
+    """Elimina un progetto (solo Admin)."""
+    proj = db.query(TaskForceProject).filter(TaskForceProject.id == project_id).first()
+    if not proj:
+        raise HTTPException(status_code=404, detail="Progetto non trovato")
+    
+    db.delete(proj)
+    db.commit()
+    return {"detail": "Progetto eliminato"}
+
+
 @router.post("/projects/{project_id}/members", response_model=MemberOut)
 def add_member(project_id: int, req: MemberAdd, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
     """Aggiunge un membro al progetto (solo admin o chi e' gia membro puo invitare)."""
@@ -289,35 +317,161 @@ def remove_member(project_id: int, user_id: int, user: UserProfile = Depends(get
     return {"detail": "Membro rimosso"}
 
 
+# ── WebSocket Manager ───────────────────────────────────────────────────────────
+from fastapi import WebSocket, WebSocketDisconnect
+
+class ConnectionManager:
+    def __init__(self):
+        # project_id -> list of websockets
+        self.active_connections: dict[int, List[WebSocket]] = {}
+
+    async def connect(self, websocket: WebSocket, project_id: int):
+        await websocket.accept()
+        if project_id not in self.active_connections:
+            self.active_connections[project_id] = []
+        self.active_connections[project_id].append(websocket)
+
+    def disconnect(self, websocket: WebSocket, project_id: int):
+        if project_id in self.active_connections:
+            self.active_connections[project_id].remove(websocket)
+            if not self.active_connections[project_id]:
+                del self.active_connections[project_id]
+
+    async def broadcast(self, message: dict, project_id: int):
+        if project_id in self.active_connections:
+            for connection in self.active_connections[project_id]:
+                try:
+                    await connection.send_json(message)
+                except Exception:
+                    pass # Connection might be closed, disconnect will handle it
+
+manager = ConnectionManager()
+
+@router.websocket("/ws/{project_id}")
+async def taskforce_websocket_endpoint(websocket: WebSocket, project_id: int):
+    # Simple check: project exists (optional but good)
+    # Note: In production, verify token from query_params
+    await manager.connect(websocket, project_id)
+    try:
+        while True:
+            # We don't expect messages FROM the client, just keeping it alive
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, project_id)
+
+@router.post("/suggest-members", response_model=List[SuggestResult])
+def suggest_members(req: SuggestMembersRequest, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Suggerisce i membri basandosi sulla descrizione del problema e le competenze."""
+    # 1. Recupera tutte le categorie
+    categories = db.query(ExpertiseCategory).all()
+    cat_list = [{"id": c.id, "name": c.name} for c in categories]
+    
+    if not cat_list:
+        return []
+
+    # 2. Chiama l'AI per mappare descrizione -> categorie
+    matched_cat_ids = match_problem_to_expertise(req.description, cat_list)
+    
+    if not matched_cat_ids:
+        return []
+
+    # 3. Recupera gli utenti che hanno quelle competenze
+    # Usiamo un join per trovare gli utenti e le loro categorie matchate
+    query = db.query(UserProfile, ExpertiseCategory.name).join(
+        UserExpertise, UserProfile.id == UserExpertise.user_id
+    ).join(
+        ExpertiseCategory, UserExpertise.category_id == ExpertiseCategory.id
+    ).filter(
+        ExpertiseCategory.id.in_(matched_cat_ids)
+    ).all()
+
+    # Raggruppa per utente (un utente potrebbe avere più categorie matchate)
+    user_map = {}
+    for u, cat_name in query:
+        if u.id not in user_map:
+            user_map[u.id] = {
+                "user_id": u.id,
+                "first_name": u.first_name,
+                "last_name": u.last_name,
+                "email": u.email,
+                "matched_categories": []
+            }
+        if cat_name not in user_map[u.id]["matched_categories"]:
+            user_map[u.id]["matched_categories"].append(cat_name)
+
+    return list(user_map.values())
+
+
+from fastapi import File, UploadFile, Form
+import shutil
+import uuid
+
 @router.post("/projects/{project_id}/updates", response_model=UpdateOut)
-def post_update(project_id: int, req: UpdateCreate, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Pubblica un aggiornamento e notifica via email tutti i membri."""
+async def post_update(
+    project_id: int, 
+    content: str = Form(...), 
+    file: Optional[UploadFile] = File(None),
+    user: UserProfile = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    """Pubblica un aggiornamento (con eventuale file) e notifica in real-time."""
     proj = db.query(TaskForceProject).filter(TaskForceProject.id == project_id).first()
     if not proj:
         raise HTTPException(status_code=404, detail="Progetto non trovato")
+
+    attachment_path = None
+    attachment_type = None
+
+    if file:
+        # Crea directory se non esiste
+        upload_dir = os.path.join("static", "uploads", "taskforce")
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        file_ext = os.path.splitext(file.filename)[1] if file.filename else ""
+        file_name = f"{uuid.uuid4()}{file_ext}"
+        file_path = os.path.join(upload_dir, file_name)
+        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        attachment_path = f"/static/uploads/taskforce/{file_name}"
+        attachment_type = file.content_type
 
     # Aggiungi update
     update = TaskForceUpdate(
         project_id=project_id,
         author_id=user.id,
-        content=req.content
+        content=content,
+        attachment_path=attachment_path,
+        attachment_type=attachment_type
     )
     db.add(update)
     db.commit()
     db.refresh(update)
 
-    # Invia email a tutti i membri tranne l'autore
+    # Preparazione dati per broadcast ed email
+    author_name = f"{user.first_name} {user.last_name}"
+    update_data = {
+        "id": update.id,
+        "author_id": user.id,
+        "author_name": author_name,
+        "content": update.content,
+        "attachment_path": update.attachment_path,
+        "attachment_type": update.attachment_type,
+        "created_at": update.created_at.isoformat()
+    }
+
+    # 1. Broadcast via WebSocket (Real-time)
+    await manager.broadcast(update_data, project_id)
+
+    # 2. Invia email in background (opzionale: potresti usare BackgroundTasks)
     members = db.query(TaskForceMember, UserProfile).join(UserProfile, TaskForceMember.user_id == UserProfile.id).filter(TaskForceMember.project_id == project_id).all()
     recipients = [p.email for m, p in members if p.id != user.id]
 
     if recipients:
-        author_name = f"{user.first_name} {user.last_name}"
-        send_update_email(proj.name, req.content, author_name, recipients)
+        try:
+            send_update_email(proj.name, content, author_name, recipients)
+        except Exception:
+            pass 
 
-    return UpdateOut(
-        id=update.id,
-        author_id=user.id,
-        author_name=f"{user.first_name} {user.last_name}",
-        content=update.content,
-        created_at=update.created_at
-    )
+    return update_data

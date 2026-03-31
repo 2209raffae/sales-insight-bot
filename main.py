@@ -1,4 +1,4 @@
-﻿"""
+"""
 Sales Insight Bot - AI Lead & Spend Analytics Copilot
 FastAPI application entry point.
 """
@@ -24,12 +24,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173", 
-        "http://127.0.0.1:5173",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000"
-    ],
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -72,7 +67,9 @@ async def enforce_utf8_charset(request: Request, call_next):
 
 @app.on_event("startup")
 def on_startup():
+    from database import run_migrations
     Base.metadata.create_all(bind=engine)      # creates new tables if not present
+    run_migrations()                           # adds missing columns to existing tables
 
 
 # Include routers
@@ -110,6 +107,10 @@ from fastapi.responses import FileResponse
 
 frontend_dist = os.path.join(os.path.dirname(__file__), "frontend", "dist")
 
+# Ensure static directories exist
+os.makedirs(os.path.join("static", "uploads", "taskforce"), exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 if os.path.isdir(frontend_dist):
     app.mount("/assets", UTF8StaticFiles(directory=os.path.join(frontend_dist, "assets")), name="assets")
 
@@ -136,4 +137,6 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="127.0.0.1", port=4000, reload=True)
+    import os
+    port = int(os.environ.get("PORT", 4000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)

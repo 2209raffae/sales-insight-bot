@@ -5,7 +5,7 @@ Datasets: Leads + Spend + Monthly Budgets.
 import uuid
 from datetime import datetime
 from sqlalchemy import (
-    Column, Integer, String, Float, DateTime, UniqueConstraint, ForeignKey
+    Column, Integer, String, Float, DateTime, UniqueConstraint, ForeignKey, Text
 )
 from database import Base
 
@@ -139,6 +139,28 @@ class UserPermission(Base):
     module_slug = Column(String, nullable=True)   # NULL = access to entire agent
 
 
+# ── Auth: User Expertise / Skills ─────────────────────────────────────────────
+
+class ExpertiseCategory(Base):
+    """Categories of expertise (e.g. 'Frontend', 'Backend', 'Marketing')."""
+    __tablename__ = "expertise_categories"
+
+    id   = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, nullable=False, index=True)
+
+
+class UserExpertise(Base):
+    """Mapping between users and their areas of expertise."""
+    __tablename__ = "user_expertise"
+    __table_args__ = (
+        UniqueConstraint("user_id", "category_id", name="uq_user_expertise"),
+    )
+
+    id          = Column(Integer, primary_key=True, index=True)
+    user_id     = Column(Integer, ForeignKey("user_profiles.id", ondelete="CASCADE"), nullable=False, index=True)
+    category_id = Column(Integer, ForeignKey("expertise_categories.id", ondelete="CASCADE"), nullable=False, index=True)
+
+
 # ── Task Force Manager ─────────────────────────────────────────────────────────
 
 class TaskForceProject(Base):
@@ -170,8 +192,10 @@ class TaskForceUpdate(Base):
     """Aggiornamenti/comunicazioni per un progetto."""
     __tablename__ = "task_force_updates"
 
-    id         = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, ForeignKey("task_force_projects.id", ondelete="CASCADE"), nullable=False, index=True)
-    author_id  = Column(Integer, ForeignKey("user_profiles.id"), nullable=False)
-    content    = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    id              = Column(Integer, primary_key=True, index=True)
+    project_id      = Column(Integer, ForeignKey("task_force_projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    author_id       = Column(Integer, ForeignKey("user_profiles.id"), nullable=False)
+    content         = Column(Text, nullable=False)
+    attachment_path = Column(String, nullable=True) # URL o path del file
+    attachment_type = Column(String, nullable=True) # image/png, application/pdf, etc.
+    created_at      = Column(DateTime, default=datetime.utcnow)
