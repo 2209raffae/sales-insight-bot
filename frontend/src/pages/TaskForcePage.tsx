@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Users, Plus, MessageSquare, Send, X, Shield,
@@ -35,9 +35,19 @@ interface Update {
     created_at: string;
 }
 
+interface Todo {
+    id: number;
+    project_id: number;
+    content: string;
+    assigned_to: number | null;
+    is_done: number;
+    created_at: string;
+}
+
 interface ProjectDetail extends Project {
     members: Member[];
     updates: Update[];
+    todos?: Todo[]; // Local extension
 }
 
 interface SuggestedMember {
@@ -76,6 +86,13 @@ const TaskForcePage = () => {
     const [sendingUpdate, setSendingUpdate] = useState(false);
     const [showSentCheck, setShowSentCheck] = useState(false);
 
+    // Tasks state
+    const [activeTab, setActiveTab] = useState<'chat' | 'tasks'>('chat');
+    const [todos, setTodos] = useState<Todo[]>([]);
+    const [newTodoContent, setNewTodoContent] = useState('');
+    const [selectedAssignee, setSelectedAssignee] = useState<number | ''>('');
+    const [isAddingTodo, setIsAddingTodo] = useState(false);
+
     useEffect(() => {
         if (!token) return;
         fetchProjects();
@@ -98,11 +115,28 @@ const TaskForcePage = () => {
         }
     };
 
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    useEffect(() => {
+        if (selectedProject?.updates) {
+            scrollToBottom();
+        }
+    }, [selectedProject?.updates]);
+
     const fetchProjectDetail = async (id: number) => {
         try {
             const res = await axios.get(`/api/taskforce/projects/${id}`, { headers: { Authorization: `Bearer ${token}` } });
             setSelectedProject(res.data);
             setShowSentCheck(false);
+            
+            // Carica anche i task
+            const tasksRes = await axios.get(`/api/taskforce/projects/${id}/tasks`, { headers: { Authorization: `Bearer ${token}` } });
+            setTodos(tasksRes.data);
+            setActiveTab('chat');
         } catch (err) {
             console.error("Errore caricamento dettagli progetto", err);
         }
@@ -124,11 +158,23 @@ const TaskForcePage = () => {
         socket.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                setSelectedProject(prev => {
-                    if (!prev || prev.id !== selectedProject.id) return prev;
-                    if (prev.updates.some(u => u.id === data.id)) return prev;
-                    return { ...prev, updates: [data, ...prev.updates] };
-                });
+                
+                // Gestione messaggi chat (default)
+                if (!data.type) {
+                    setSelectedProject(prev => {
+                        if (!prev || prev.id !== selectedProject.id) return prev;
+                        if (prev.updates.some(u => u.id === data.id)) return prev;
+                        return { ...prev, updates: [...prev.updates, data] };
+                    });
+                } 
+                // Gestione nuovi task
+                else if (data.type === 'todo_new') {
+                    setTodos(prev => [...prev, data.data]);
+                }
+                // Gestione aggiornamento task
+                else if (data.type === 'todo_update') {
+                    setTodos(prev => prev.map(t => t.id === data.data.id ? { ...t, is_done: data.data.is_done } : t));
+                }
             } catch (e) {
                 console.error("WebSocket message error", e);
             }
@@ -224,18 +270,15 @@ const TaskForcePage = () => {
                 formData.append('file', attachment);
             }
 
-            const res = await axios.post(`/api/taskforce/projects/${selectedProject.id}/updates`, formData, {
+            await axios.post(`/api/taskforce/projects/${selectedProject.id}/updates`, formData, {
                 headers: { 
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
                 }
             });
             
-            // Add locally instantly
-            setSelectedProject(prev => prev ? {
-                ...prev,
-                updates: [res.data, ...prev.updates]
-            } : prev);
+            // L'aggiornamento verrà aggiunto tramite WebSocket broadcast (anche per il mittente)
+            // per evitare duplicati e garantire l'ordine.
             
             setNewUpdateContent('');
             setAttachment(null);
@@ -245,6 +288,34 @@ const TaskForcePage = () => {
             alert('Errore invio aggiornamento.');
         } finally {
             setSendingUpdate(false);
+        }
+    };
+
+    const handleCreateTodo = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedProject || !newTodoContent.trim()) return;
+        setIsAddingTodo(true);
+        try {
+            await axios.post(`/api/taskforce/projects/${selectedProject.id}/tasks`, {
+                content: newTodoContent,
+                assigned_to: selectedAssignee || null
+            }, { headers: { Authorization: `Bearer ${token}` } });
+            setNewTodoContent('');
+            setSelectedAssignee('');
+        } catch (err) {
+            alert('Errore creazione task');
+        } finally {
+            setIsAddingTodo(false);
+        }
+    };
+
+    const handleToggleTodo = async (todoId: number) => {
+        try {
+            await axios.patch(`/api/taskforce/tasks/${todoId}/toggle`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+        } catch (err) {
+            alert('Errore aggiornamento task');
         }
     };
 
@@ -373,7 +444,7 @@ const TaskForcePage = () => {
                                         <p className="text-slate-400 text-sm max-w-2xl">{selectedProject.description}</p>
                                     </div>
                                     <div className="flex flex-col items-end gap-2">
-                                        {(user?.is_admin === 1 || selectedProject.members.some(m => m.user_id === user?.id && m.role === 'Leader')) ? (
+                                        {(user?.is_admin === 1 || selectedProject.created_by === user?.id || selectedProject.members.some(m => m.user_id === user?.id && m.role === 'Leader')) ? (
                                             <div className="flex items-center gap-1 bg-black/40 p-1 rounded-lg border border-white/5">
                                                 {['attivo', 'completato', 'sospeso'].map(s => (
                                                     <button
@@ -429,97 +500,208 @@ const TaskForcePage = () => {
                                         </div>
                                     </div>
                                 </div>
+                                            {/* Selettore Tab */}
+                                <div className="mt-6 flex items-center gap-2">
+                                    <button 
+                                        onClick={() => setActiveTab('chat')}
+                                        className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'chat' ? 'bg-neon-green text-black shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'text-slate-400 hover:text-white bg-white/5'}`}
+                                    >
+                                        Briefing Chat
+                                    </button>
+                                    <button 
+                                        onClick={() => setActiveTab('tasks')}
+                                        className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === 'tasks' ? 'bg-neon-blue text-white shadow-[0_0_15px_rgba(0,194,255,0.3)]' : 'text-slate-400 hover:text-white bg-white/5'}`}
+                                    >
+                                        Piano d'Azione 
+                                        {todos.filter(t => !t.is_done).length > 0 && (
+                                            <span className="bg-red-500 text-white w-4 h-4 rounded-full flex items-center justify-center text-[10px] animate-pulse">
+                                                {todos.filter(t => !t.is_done).length}
+                                            </span>
+                                        )}
+                                    </button>
+                                </div>
                             </div>
 
-                            {/* Feed Aggiornamenti */}
-                            <div className="glass-panel p-6 flex-1 overflow-y-auto space-y-6">
-                                {selectedProject.updates.length === 0 ? (
-                                    <div className="h-full flex flex-col items-center justify-center text-slate-500 p-8">
-                                        <MessageSquare size={48} className="mb-4 opacity-10" />
-                                        <p className="text-sm uppercase tracking-widest font-light">In attesa del primo briefing missione...</p>
-                                    </div>
-                                ) : (
-                                    selectedProject.updates.map(upd => (
-                                        <div key={upd.id} className="flex gap-4 p-4 rounded-xl bg-black/40 border border-white/5 hover:border-white/10 transition-colors">
-                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-neon-green/20 to-emerald-500/10 border border-neon-green/30 flex items-center justify-center text-neon-green font-bold shrink-0">
-                                                {upd.author_name.substring(0, 2).toUpperCase()}
+                            {activeTab === 'chat' ? (
+                                <>
+                                    {/* Feed Aggiornamenti (Chat) */}
+                                    <div className="glass-panel p-6 flex-1 overflow-y-auto space-y-6">
+                                        {selectedProject.updates.length === 0 ? (
+                                            <div className="h-full flex flex-col items-center justify-center text-slate-500 p-8">
+                                                <MessageSquare size={48} className="mb-4 opacity-10" />
+                                                <p className="text-sm uppercase tracking-widest font-light">In attesa del primo briefing missione...</p>
                                             </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex justify-between items-baseline mb-2">
-                                                    <h5 className="text-sm font-bold text-slate-200">{upd.author_name}</h5>
-                                                    <span className="text-[10px] text-slate-500 uppercase tracking-tighter">{new Date(upd.created_at).toLocaleString()}</span>
-                                                </div>
-                                                <div className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap font-light mb-3">
-                                                    {upd.content}
-                                                </div>
-                                                {upd.attachment_path && (
-                                                    <div className="mt-2 rounded-xl bg-black/20 border border-white/5 p-2 overflow-hidden w-fit max-w-full">
-                                                        {upd.attachment_type?.startsWith('image/') ? (
-                                                            <a href={upd.attachment_path} target="_blank" rel="noreferrer">
-                                                                <img 
-                                                                    src={upd.attachment_path} 
-                                                                    alt="Allegato" 
-                                                                    className="max-h-64 rounded-lg object-contain cursor-zoom-in hover:opacity-90 transition-opacity" 
-                                                                />
-                                                            </a>
-                                                        ) : (
-                                                            <a 
-                                                                href={upd.attachment_path} 
-                                                                target="_blank" 
-                                                                rel="noreferrer"
-                                                                className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-neon-blue hover:text-white transition-colors"
-                                                            >
-                                                                <Plus size={14} className="rotate-45" />
-                                                                Download {upd.attachment_path.split('/').pop()}
-                                                            </a>
+                                        ) : (
+                                            selectedProject.updates.map(upd => (
+                                                <div key={upd.id} className="flex gap-4 p-4 rounded-xl bg-black/40 border border-white/5 hover:border-white/10 transition-colors">
+                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-neon-green/20 to-emerald-500/10 border border-neon-green/30 flex items-center justify-center text-neon-green font-bold shrink-0">
+                                                        {upd.author_name.substring(0, 2).toUpperCase()}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex justify-between items-baseline mb-2">
+                                                            <h5 className="text-sm font-bold text-slate-200">{upd.author_name}</h5>
+                                                            <span className="text-[10px] text-slate-500 uppercase tracking-tighter">{new Date(upd.created_at).toLocaleString()}</span>
+                                                        </div>
+                                                        <div className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap font-light mb-3">
+                                                            {upd.content}
+                                                        </div>
+                                                        {upd.attachment_path && (
+                                                            <div className="mt-2 rounded-xl bg-black/20 border border-white/5 p-2 overflow-hidden w-fit max-w-full">
+                                                                {upd.attachment_type?.startsWith('image/') ? (
+                                                                    <a href={upd.attachment_path} target="_blank" rel="noreferrer">
+                                                                        <img 
+                                                                            src={upd.attachment_path} 
+                                                                            alt="Allegato" 
+                                                                            className="max-h-64 rounded-lg object-contain cursor-zoom-in hover:opacity-90 transition-opacity" 
+                                                                        />
+                                                                    </a>
+                                                                ) : (
+                                                                    <a 
+                                                                        href={upd.attachment_path} 
+                                                                        target="_blank" 
+                                                                        rel="noreferrer"
+                                                                        className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-neon-blue hover:text-white transition-colors"
+                                                                    >
+                                                                        <Plus size={14} className="rotate-45" />
+                                                                        Download {upd.attachment_path.split('/').pop()}
+                                                                    </a>
+                                                                )}
+                                                            </div>
                                                         )}
                                                     </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-
-                            {/* Input Area */}
-                            <div className="glass-panel rounded-b-2xl p-4 border-t border-white/10 bg-black/80">
-                                <form onSubmit={handlePostUpdate} className="flex flex-col gap-3">
-                                    <div className="flex gap-3 items-end">
-                                        <textarea
-                                            value={newUpdateContent}
-                                            onChange={(e) => setNewUpdateContent(e.target.value)}
-                                            placeholder="Scrivi un aggiornamento. Verrà inviato via email e in tempo reale ai membri..."
-                                            className="flex-1 bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-neon-green/50 resize-none h-20 placeholder:text-slate-600 transition-all font-light"
-                                        />
-                                        <div className="flex flex-col gap-2 shrink-0">
-                                            <button
-                                                type="submit"
-                                                disabled={sendingUpdate || (!newUpdateContent.trim() && !attachment)}
-                                                className="h-12 px-6 bg-neon-green text-black font-black uppercase tracking-wider text-xs rounded-xl hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
-                                            >
-                                                {sendingUpdate ? <span className="animate-pulse">...</span> : showSentCheck ? <CheckCircle size={18} /> : <><Send size={14} /> Briefing</>}
-                                            </button>
-                                            <label className="cursor-pointer group">
-                                                <input 
-                                                    type="file" 
-                                                    className="hidden" 
-                                                    onChange={(e) => setAttachment(e.target.files?.[0] || null)}
-                                                />
-                                                <div className={`h-10 w-12 flex items-center justify-center rounded-xl border transition-all ${attachment ? 'bg-neon-blue/20 border-neon-blue text-neon-blue' : 'bg-white/5 border-white/10 text-slate-500 group-hover:border-white/20'}`} title="Allega File">
-                                                    <Plus size={18} />
                                                 </div>
-                                            </label>
-                                        </div>
+                                            ))
+                                        )}
+                                        <div ref={messagesEndRef} />
                                     </div>
-                                    {attachment && (
-                                        <div className="flex items-center justify-between px-3 py-1 bg-white/5 rounded-lg border border-white/5 text-[10px] text-slate-400">
-                                            <span className="truncate max-w-[200px]">📎 {attachment.name}</span>
-                                            <button onClick={() => setAttachment(null)} className="text-red-400 hover:text-red-300">Rimuovi</button>
-                                        </div>
+
+                                    {/* Input Area */}
+                                    <div className="glass-panel rounded-b-2xl p-4 border-t border-white/10 bg-black/80">
+                                        <form onSubmit={handlePostUpdate} className="flex flex-col gap-3">
+                                            <div className="flex gap-3 items-end">
+                                                <textarea
+                                                    value={newUpdateContent}
+                                                    onChange={(e) => setNewUpdateContent(e.target.value)}
+                                                    placeholder="Scrivi un aggiornamento. Verrà inviato via email e in tempo reale ai membri..."
+                                                    className="flex-1 bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-neon-green/50 resize-none h-20 placeholder:text-slate-600 transition-all font-light"
+                                                />
+                                                <div className="flex flex-col gap-2 shrink-0">
+                                                    <button
+                                                        type="submit"
+                                                        disabled={sendingUpdate || (!newUpdateContent.trim() && !attachment)}
+                                                        className="h-12 px-6 bg-neon-green text-black font-black uppercase tracking-wider text-xs rounded-xl hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                                                    >
+                                                        {sendingUpdate ? <span className="animate-pulse">...</span> : showSentCheck ? <CheckCircle size={18} /> : <><Send size={14} /> Briefing</>}
+                                                    </button>
+                                                    <label className="cursor-pointer group">
+                                                        <input 
+                                                            type="file" 
+                                                            className="hidden" 
+                                                            onChange={(e) => setAttachment(e.target.files?.[0] || null)}
+                                                        />
+                                                        <div className={`h-10 w-12 flex items-center justify-center rounded-xl border transition-all ${attachment ? 'bg-neon-blue/20 border-neon-blue text-neon-blue' : 'bg-white/5 border-white/10 text-slate-500 group-hover:border-white/20'}`} title="Allega File">
+                                                            <Plus size={18} />
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            {attachment && (
+                                                <div className="flex items-center justify-between px-3 py-1 bg-white/5 rounded-lg border border-white/5 text-[10px] text-slate-400">
+                                                    <span className="truncate max-w-[200px]">📎 {attachment.name}</span>
+                                                    <button onClick={() => setAttachment(null)} className="text-red-400 hover:text-red-300">Rimuovi</button>
+                                                </div>
+                                            )}
+                                        </form>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="glass-panel p-6 flex-1 overflow-y-auto flex flex-col">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h3 className="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-2">
+                                            <CheckCircle size={24} className="text-neon-blue" /> Lista Obbiettivi
+                                        </h3>
+                                        <button 
+                                            onClick={() => setIsAddingTodo(!isAddingTodo)}
+                                            className="text-[10px] font-bold text-neon-blue uppercase border border-neon-blue/30 px-3 py-1 rounded-lg hover:bg-neon-blue hover:text-black transition-all"
+                                        >
+                                            {isAddingTodo ? 'Annulla' : '+ Aggiungi Task'}
+                                        </button>
+                                    </div>
+
+                                    {isAddingTodo && (
+                                        <form onSubmit={handleCreateTodo} className="bg-white/5 p-4 rounded-2xl border border-white/10 mb-6 animate-in slide-in-from-top duration-300">
+                                            <div className="space-y-4">
+                                                <input 
+                                                    type="text"
+                                                    required
+                                                    value={newTodoContent}
+                                                    onChange={e => setNewTodoContent(e.target.value)}
+                                                    placeholder="Cosa bisogna fare?"
+                                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-neon-blue/50"
+                                                />
+                                                <div className="flex gap-4">
+                                                    <div className="flex-1">
+                                                        <label className="block text-[10px] text-slate-500 uppercase font-bold mb-1 ml-1">Assegna a</label>
+                                                        <select 
+                                                            value={selectedAssignee}
+                                                            onChange={e => setSelectedAssignee(e.target.value as any)}
+                                                            className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                                                        >
+                                                            <option value="">Chiunque</option>
+                                                            {selectedProject.members.map(m => (
+                                                                <option key={m.user_id} value={m.user_id}>{m.first_name} {m.last_name}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    <button type="submit" className="self-end bg-neon-blue text-white px-6 py-2 rounded-xl text-xs font-bold uppercase hover:bg-blue-400 transition-all">
+                                                        Crea Task
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
                                     )}
-                                    
-                                </form>
-                            </div>
+
+                                    <div className="space-y-3">
+                                        {todos.length === 0 ? (
+                                            <div className="text-center py-12 text-slate-500 italic text-sm">
+                                                Nessun task creato per questa Task Force.
+                                            </div>
+                                        ) : (
+                                            todos.sort((a, b) => a.is_done - b.is_done).map(t => {
+                                                const assignee = selectedProject.members.find(m => m.user_id === t.assigned_to);
+                                                return (
+                                                    <div 
+                                                        key={t.id} 
+                                                        className={`group p-4 rounded-2xl border transition-all flex items-center gap-4 ${t.is_done ? 'bg-black/20 border-white/5 opacity-50' : 'bg-white/5 border-white/10 hover:border-neon-blue/30'}`}
+                                                    >
+                                                        <button 
+                                                            onClick={() => handleToggleTodo(t.id)}
+                                                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${t.is_done ? 'bg-neon-blue border-neon-blue text-white' : 'border-white/20 hover:border-neon-blue text-transparent'}`}
+                                                        >
+                                                            <Check size={12} />
+                                                        </button>
+                                                        <div className="flex-1">
+                                                            <div className={`text-sm font-medium ${t.is_done ? 'line-through text-slate-500' : 'text-slate-200'}`}>
+                                                                {t.content}
+                                                            </div>
+                                                            {assignee && (
+                                                                <div className="text-[10px] text-slate-500 mt-1 uppercase flex items-center gap-1">
+                                                                    <Users size={10} /> {assignee.first_name} {assignee.last_name}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        {!t.is_done && (
+                                                            <div className="text-[9px] text-slate-600 uppercase font-mono">
+                                                                Pending
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </>
                     ) : (
                         <div className="h-full glass-panel rounded-2xl flex flex-col items-center justify-center p-8 text-center text-slate-500 border-dashed border-2 border-white/5">

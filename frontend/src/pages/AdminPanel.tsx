@@ -112,6 +112,7 @@ const AdminPanel = () => {
                 first_name: u.first_name,
                 last_name: u.last_name,
                 role: u.role,
+                is_admin: u.is_admin,
                 expertise_ids: u.expertise.map(e => e.id)
             }, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -295,6 +296,19 @@ const AdminPanel = () => {
                                                             placeholder="es. Frontend Developer, Manager"
                                                             className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:border-neon-amber/50 outline-none"
                                                         />
+                                                    </div>
+
+                                                    <div className="flex items-center gap-3 mt-4 p-3 rounded-lg bg-white/5 border border-white/10">
+                                                        <div className="flex-1">
+                                                            <div className="text-[10px] font-bold text-neon-amber uppercase tracking-widest leading-none">Ruolo Amministratore</div>
+                                                            <div className="text-[9px] text-slate-500 mt-1">Gli admin hanno accesso a tutti i moduli del sistema</div>
+                                                        </div>
+                                                        <button 
+                                                            onClick={() => setUsers(prev => prev.map(x => x.id === u.id ? { ...x, is_admin: x.is_admin === 1 ? 0 : 1 } : x))}
+                                                            className={`relative w-10 h-5 rounded-full transition-all duration-300 flex items-center ${u.is_admin === 1 ? 'bg-neon-amber' : 'bg-slate-700'}`}
+                                                        >
+                                                            <div className={`absolute w-3.5 h-3.5 bg-white rounded-full shadow-lg transform transition-transform duration-300 ${u.is_admin === 1 ? 'translate-x-5.5' : 'translate-x-1'}`} />
+                                                        </button>
                                                     </div>
 
                                                     <div className="mt-4">

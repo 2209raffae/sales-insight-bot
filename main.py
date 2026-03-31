@@ -8,6 +8,12 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.staticfiles import StaticFiles
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
+
 from database import engine
 from models import Base, LeadRecord, CampaignSpend, UploadBatch, CampaignMonthlyBudget, ActualSpend, UserProfile, UserPermission, TaskForceProject, TaskForceMember, TaskForceUpdate  # noqa: F401
 
@@ -134,6 +140,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     if request.url.path.startswith("/api"):
         return JSONResponse(status_code=500, content={"detail": "Internal server error."})
     return JSONResponse(status_code=500, content={"detail": "Internal server error."})
+
 
 if __name__ == "__main__":
     import uvicorn

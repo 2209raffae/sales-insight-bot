@@ -134,7 +134,7 @@ class UserPermission(Base):
     )
 
     id          = Column(Integer, primary_key=True, index=True)
-    user_id     = Column(Integer, ForeignKey("user_profiles.id"), nullable=False, index=True)
+    user_id     = Column(Integer, ForeignKey("user_profiles.id", ondelete="CASCADE"), nullable=False, index=True)
     agent_slug  = Column(String, nullable=False)
     module_slug = Column(String, nullable=True)   # NULL = access to entire agent
 
@@ -172,7 +172,7 @@ class TaskForceProject(Base):
     description = Column(String, nullable=True)
     status      = Column(String, default="attivo") # "attivo", "completato", "sospeso"
     created_at  = Column(DateTime, default=datetime.utcnow)
-    created_by  = Column(Integer, ForeignKey("user_profiles.id"), nullable=False)
+    created_by  = Column(Integer, ForeignKey("user_profiles.id", ondelete="CASCADE"), nullable=False)
 
 
 class TaskForceMember(Base):
@@ -194,8 +194,20 @@ class TaskForceUpdate(Base):
 
     id              = Column(Integer, primary_key=True, index=True)
     project_id      = Column(Integer, ForeignKey("task_force_projects.id", ondelete="CASCADE"), nullable=False, index=True)
-    author_id       = Column(Integer, ForeignKey("user_profiles.id"), nullable=False)
+    author_id       = Column(Integer, ForeignKey("user_profiles.id", ondelete="CASCADE"), nullable=False)
     content         = Column(Text, nullable=False)
     attachment_path = Column(String, nullable=True) # URL o path del file
     attachment_type = Column(String, nullable=True) # image/png, application/pdf, etc.
     created_at      = Column(DateTime, default=datetime.utcnow)
+
+
+class TaskForceTodo(Base):
+    """Specific tasks assigned within a Task Force."""
+    __tablename__ = "task_force_todos"
+
+    id          = Column(Integer, primary_key=True, index=True)
+    project_id  = Column(Integer, ForeignKey("task_force_projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    content     = Column(String, nullable=False)
+    assigned_to = Column(Integer, ForeignKey("user_profiles.id", ondelete="CASCADE"), nullable=True)
+    is_done     = Column(Integer, default=0) # 0=pending, 1=done
+    created_at  = Column(DateTime, default=datetime.utcnow)

@@ -16,8 +16,7 @@ from ai_layer import match_problem_to_expertise
 
 router = APIRouter(prefix="/api/taskforce", tags=["Task Force Manager"])
 
-# Confing Resend
-resend.api_key = os.getenv("RESEND_API_KEY")
+# Resend key will be set inside helper functions to ensure .env is loaded
 
 # ── Schemas ────────────────────────────────────────────────────────────────────
 
@@ -74,13 +73,31 @@ class SuggestResult(BaseModel):
     email: str
     matched_categories: List[str]
 
+class TodoCreate(BaseModel):
+    content: str
+    assigned_to: Optional[int] = None
+
+class TodoOut(BaseModel):
+    id: int
+    project_id: int
+    content: str
+    assigned_to: Optional[int]
+    is_done: int
+    created_at: datetime
+
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
 def send_update_email(project_name: str, update_content: str, author_name: str, recipients: List[str]):
     """Send an email notification via Resend to all project members."""
+    resend.api_key = os.getenv("RESEND_API_KEY")
+    from_email = os.getenv("RESEND_FROM_EMAIL", "Nexus Hub <onboarding@resend.dev>")
+    
     if not resend.api_key or not recipients:
-        return # Skip if no API key or no recipients
+        print(f"DEBUG EMAIL: Key missing or no recipients. Key exists: {bool(resend.api_key)}, Recipients: {len(recipients)}")
+        return 
+    
+    print(f"DEBUG EMAIL: Tentativo invio aggiornamento da {from_email} a {len(recipients)} persone.")
 
     try:
         html_content = f"""
@@ -114,15 +131,149 @@ def send_update_email(project_name: str, update_content: str, author_name: str, 
         # Assicurati di usare l'email verificata sul tuo account come "From".
         # Es: "onboarding@resend.dev" se non hai un dominio personalizzato configurato regolarmente.
         
-        params = {
-            "from": "Nexus Hub <onboarding@resend.dev>", 
-            "to": recipients,
-            "subject": f"[{project_name}] Nuovo Aggiornamento Task Force",
-            "html": html_content
-        }
-        resend.Emails.send(params)
+        # In modalità test (onboarding@resend.dev), Resend accetta solo l'email del proprietario.
+        is_testing_domain = "onboarding@resend.dev" in from_email
+        
+        for email in recipients:
+            try:
+                # Se siamo in test e l'email non è quella verificata, saltiamo per evitare 403
+                if is_testing_domain and email != "2209raffae@gmail.com":
+                    print(f"DEBUG EMAIL: Saltando {email} (Restrizione Testing Domain)")
+                    continue
+
+                resend.Emails.send({
+                    "from": from_email,
+                    "to": [email],
+                    "subject": f"[{project_name}] Nuovo Aggiornamento Task Force",
+                    "html": html_content
+                })
+                print(f"DEBUG EMAIL: Inviata a {email}")
+            except Exception as e:
+                print(f"Errore invio a {email}: {e}")
     except Exception as e:
-        print(f"Errore invio email Resend: {e}")
+        print(f"Errore generale Resend: {e}")
+
+def send_creation_email(project_name: str, creator_name: str, recipients: List[str]):
+    """Invia un'email di benvenuto alla creazione della Task Force."""
+    resend.api_key = os.getenv("RESEND_API_KEY")
+    from_email = os.getenv("RESEND_FROM_EMAIL", "Nexus Hub <onboarding@resend.dev>")
+    
+    if not resend.api_key or not recipients:
+        return
+
+    try:
+        html_content = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background-color: #0f172a;">
+            <div style="padding: 40px 20px; text-align: center;">
+                <div style="display: inline-block; padding: 10px; background-color: #10b98120; border-radius: 50%; margin-bottom: 20px;">
+                    <span style="font-size: 40px;">🚀</span>
+                </div>
+                <h1 style="color: #ffffff; margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">Missione Inizializzata</h1>
+                <p style="color: #10b981; font-weight: bold; margin-top: 10px;">{project_name}</p>
+            </div>
+            <div style="padding: 30px; background-color: #ffffff; border-radius: 20px 20px 0 0;">
+                <p style="color: #475569; font-size: 16px; line-height: 1.6;">
+                    Ciao <strong>{creator_name}</strong>, la tua nuova Task Force è ora operativa nel Nexus Hub.
+                </p>
+                <div style="margin: 25px 0; padding: 20px; background-color: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1;">
+                    <p style="margin: 0; color: #64748b; font-size: 13px;">Prossimi passi:</p>
+                    <ul style="color: #334155; font-size: 14px; padding-left: 20px; margin-top: 10px;">
+                        <li>Invita specialisti nel team</li>
+                        <li>Definisci il piano d'azione</li>
+                        <li>Inizia il briefing in chat</li>
+                    </ul>
+                </div>
+                <div style="text-align: center; margin-top: 30px;">
+                    <a href="https://sales-insight-bot.onrender.com/task-force" style="display: inline-block; background-color: #0f172a; color: white; text-decoration: none; padding: 15px 30px; border-radius: 8px; font-weight: bold; font-size: 14px;">Apri Mission Control</a>
+                </div>
+            </div>
+            <div style="padding: 20px; text-align: center; color: #64748b; font-size: 11px; background-color: #ffffff;">
+                Nexus Hub &bull; Task Force Manager AI
+            </div>
+        </div>
+        """
+        is_testing_domain = "onboarding@resend.dev" in from_email
+        
+        for email in recipients:
+            try:
+                if is_testing_domain and email != "2209raffae@gmail.com":
+                    continue
+                
+                resend.Emails.send({
+                    "from": from_email,
+                    "to": [email],
+                    "subject": f"🚀 Task Force Inizializzata: {project_name}",
+                    "html": html_content
+                })
+            except Exception:
+                pass
+    except Exception as e:
+        print(f"Errore invio email creazione: {e}")
+
+def send_status_email(project_name: str, new_status: str, recipients: List[str]):
+    """Notifica il cambio di stato del progetto."""
+    resend.api_key = os.getenv("RESEND_API_KEY")
+    from_email = os.getenv("RESEND_FROM_EMAIL", "Nexus Hub <onboarding@resend.dev>")
+    
+    if not resend.api_key or not recipients:
+        print(f"DEBUG EMAIL STATUS: Key missing or no recipients.")
+        return
+
+    print(f"DEBUG EMAIL STATUS: Tentativo invio cambio stato da {from_email} a {len(recipients)} persone.")
+
+    status_colors = {
+        "attivo": "#10b981",
+        "completato": "#3b82f6",
+        "sospeso": "#ef4444"
+    }
+    color = status_colors.get(new_status, "#64748b")
+
+    try:
+        html_content = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+            <div style="background-color: {color}; padding: 20px; text-align: center; color: white;">
+                <h2 style="margin: 0;">Aggiornamento Stato Task Force</h2>
+                <p style="margin: 5px 0 0 0; opacity: 0.9;">Project: <strong>{project_name}</strong></p>
+            </div>
+            <div style="padding: 30px; background-color: #ffffff; text-align: center;">
+                <p style="color: #64748b; font-size: 16px;">
+                    Lo stato del progetto è stato aggiornato a:
+                </p>
+                <div style="display: inline-block; padding: 10px 25px; background-color: {color}20; color: {color}; border: 2px solid {color}; border-radius: 50px; font-weight: bold; font-size: 18px; text-transform: uppercase; margin: 20px 0;">
+                    {new_status}
+                </div>
+                <p style="color: #94a3b8; font-size: 14px; margin-top: 20px;">
+                    Accedi alla dashboard per vedere i nuovi task o partecipare alla discussione.
+                </p>
+                <div style="margin-top: 30px;">
+                    <a href="https://sales-insight-bot.onrender.com/task-force" style="display: inline-block; background-color: {color}; color: white; text-decoration: none; padding: 12px 25px; border-radius: 6px; font-weight: bold;">Vai al Progetto</a>
+                </div>
+            </div>
+            <div style="background-color: #f1f5f9; padding: 15px; text-align: center; color: #94a3b8; font-size: 12px;">
+                Nexus Hub &bull; Notifica di Sistema
+            </div>
+        </div>
+        """
+        is_testing_domain = "onboarding@resend.dev" in from_email
+
+        for email in recipients:
+            try:
+                if is_testing_domain and email != "2209raffae@gmail.com":
+                    print(f"DEBUG EMAIL STATUS: Skipping {email} (Testing Mode restriction)")
+                    continue
+                
+                resend.Emails.send({
+                    "from": from_email,
+                    "to": [email],
+                    "subject": f"[{project_name}] Stato aggiornato: {new_status.upper()}",
+                    "html": html_content
+                })
+                print(f"DEBUG EMAIL STATUS: Mail stato inviata a {email}")
+            except Exception as e:
+                print(f"Errore invio mail stato a {email}: {e}")
+
+    except Exception as e:
+        print(f"Errore invio email stato: {e}")
 
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
@@ -168,6 +319,10 @@ def create_project(req: ProjectCreate, user: UserProfile = Depends(get_current_u
     db.add(member)
     db.commit()
 
+    # Invia email di conferma creazione al creatore
+    if user.email:
+        send_creation_email(proj.name, user.first_name or user.email, [user.email])
+
     return proj
 
 
@@ -199,7 +354,7 @@ def get_project_detail(project_id: int, user: UserProfile = Depends(get_current_
     ]
 
     # Estrai updates joinando UserProfile
-    updates = db.query(TaskForceUpdate, UserProfile).join(UserProfile, TaskForceUpdate.author_id == UserProfile.id).filter(TaskForceUpdate.project_id == project_id).order_by(TaskForceUpdate.created_at.desc()).all()
+    updates = db.query(TaskForceUpdate, UserProfile).join(UserProfile, TaskForceUpdate.author_id == UserProfile.id).filter(TaskForceUpdate.project_id == project_id).order_by(TaskForceUpdate.created_at.asc()).all()
     update_list = [
         UpdateOut(
             id=u.id,
@@ -230,8 +385,8 @@ def update_project_status(project_id: int, req: ProjectStatusUpdate, user: UserP
     if not proj:
         raise HTTPException(status_code=404, detail="Progetto non trovato")
 
-    # Verifica permessi
-    if user.is_admin != 1:
+    # Verifica permessi: Admin o Creatore del progetto (o Leader)
+    if user.is_admin != 1 and user.id != proj.created_by:
         is_leader = db.query(TaskForceMember).filter(
             TaskForceMember.project_id == project_id,
             TaskForceMember.user_id == user.id,
@@ -246,6 +401,15 @@ def update_project_status(project_id: int, req: ProjectStatusUpdate, user: UserP
     proj.status = req.status
     db.commit()
     db.refresh(proj)
+
+    # Invia email di notifica a tutti i membri se lo stato è completato o sospeso
+    if req.status in ["completato", "sospeso"]:
+        # Query corretta per ottenere una lista di stringhe email
+        results = db.query(UserProfile.email).join(TaskForceMember, UserProfile.id == TaskForceMember.user_id).filter(TaskForceMember.project_id == project_id).all()
+        recipients = [r[0] for r in results if r[0]] 
+        if recipients:
+            send_status_email(proj.name, req.status, recipients)
+
     return proj
 
 
@@ -296,6 +460,10 @@ def add_member(project_id: int, req: MemberAdd, user: UserProfile = Depends(get_
     db.add(member)
     db.commit()
     db.refresh(member)
+
+    # Invia email di benvenuto al nuovo membro aggiunto
+    if target_user.email:
+        send_creation_email(proj.name, target_user.first_name or target_user.email, [target_user.email])
 
     return MemberOut(
         id=member.id,
@@ -375,14 +543,18 @@ def suggest_members(req: SuggestMembersRequest, user: UserProfile = Depends(get_
     if not matched_cat_ids:
         return []
 
-    # 3. Recupera gli utenti che hanno quelle competenze
-    # Usiamo un join per trovare gli utenti e le loro categorie matchate
+    # 3. Recupera gli utenti che hanno quelle competenze E hanno accesso alla task force (o sono admin)
+    from models import UserPermission
+    
     query = db.query(UserProfile, ExpertiseCategory.name).join(
         UserExpertise, UserProfile.id == UserExpertise.user_id
     ).join(
         ExpertiseCategory, UserExpertise.category_id == ExpertiseCategory.id
+    ).outerjoin(
+        UserPermission, UserProfile.id == UserPermission.user_id
     ).filter(
-        ExpertiseCategory.id.in_(matched_cat_ids)
+        ExpertiseCategory.id.in_(matched_cat_ids),
+        ((UserPermission.agent_slug == 'task-force') | (UserProfile.is_admin == 1))
     ).all()
 
     # Raggruppa per utente (un utente potrebbe avere più categorie matchate)
@@ -475,3 +647,60 @@ async def post_update(
             pass 
 
     return update_data
+
+# ── Todo Routes ──────────────────────────────────────────────────────────────
+from models import TaskForceTodo
+
+@router.get("/projects/{project_id}/tasks", response_model=List[TodoOut])
+def get_tasks(project_id: int, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Lista i task di un progetto."""
+    return db.query(TaskForceTodo).filter(TaskForceTodo.project_id == project_id).order_by(TaskForceTodo.created_at.asc()).all()
+
+@router.post("/projects/{project_id}/tasks", response_model=TodoOut)
+async def create_task(project_id: int, req: TodoCreate, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Crea un nuovo task e notifica via WebSocket."""
+    todo = TaskForceTodo(
+        project_id=project_id,
+        content=req.content,
+        assigned_to=req.assigned_to
+    )
+    db.add(todo)
+    db.commit()
+    db.refresh(todo)
+
+    # Notifica via WebSocket con un tipo speciale
+    await manager.broadcast({
+        "type": "todo_new",
+        "data": {
+            "id": todo.id,
+            "project_id": todo.project_id,
+            "content": todo.content,
+            "assigned_to": todo.assigned_to,
+            "is_done": todo.is_done,
+            "created_at": todo.created_at.isoformat()
+        }
+    }, project_id)
+
+    return todo
+
+@router.patch("/tasks/{task_id}/toggle", response_model=TodoOut)
+async def toggle_task(task_id: int, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Inverte lo stato del task (completato/da fare) e notifica via WebSocket."""
+    todo = db.query(TaskForceTodo).filter(TaskForceTodo.id == task_id).first()
+    if not todo:
+        raise HTTPException(status_code=404, detail="Task non trovato")
+    
+    todo.is_done = 1 if todo.is_done == 0 else 0
+    db.commit()
+    db.refresh(todo)
+
+    # Notifica via WebSocket
+    await manager.broadcast({
+        "type": "todo_update",
+        "data": {
+            "id": todo.id,
+            "is_done": todo.is_done
+        }
+    }, todo.project_id)
+
+    return todo
