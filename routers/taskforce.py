@@ -1,22 +1,22 @@
 import os
 import resend
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
+import shutil
+import uuid
 
 from database import get_db
 from models import (
     TaskForceProject, TaskForceMember, TaskForceUpdate, UserProfile,
-    ExpertiseCategory, UserExpertise
+    ExpertiseCategory, UserExpertise, TaskForceTodo
 )
 from routers.auth import get_current_user, require_admin
-from ai_layer import match_problem_to_expertise
+from ai_layer import match_problem_to_expertise, generate_sitrep
 
 router = APIRouter(prefix="/api/taskforce", tags=["Task Force Manager"])
-
-# Resend key will be set inside helper functions to ensure .env is loaded
 
 # ── Schemas ────────────────────────────────────────────────────────────────────
 
@@ -62,6 +62,13 @@ class UpdateOut(BaseModel):
 class ProjectDetailOut(ProjectOut):
     members: List[MemberOut]
     updates: List[UpdateOut]
+    briefing_md: Optional[str] = None
+
+class BriefingUpdate(BaseModel):
+    briefing_md: str
+
+class SITREPResponse(BaseModel):
+    sitrep: str
 
 class SuggestMembersRequest(BaseModel):
     description: str
@@ -89,618 +96,247 @@ class TodoOut(BaseModel):
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
 def send_update_email(project_name: str, update_content: str, author_name: str, recipients: List[str]):
-    """Send an email notification via Resend to all project members."""
     resend.api_key = os.getenv("RESEND_API_KEY")
     from_email = os.getenv("RESEND_FROM_EMAIL", "Nexus Hub <onboarding@resend.dev>")
+    if not resend.api_key or not recipients: return 
     
-    if not resend.api_key or not recipients:
-        print(f"DEBUG EMAIL: Key missing or no recipients. Key exists: {bool(resend.api_key)}, Recipients: {len(recipients)}")
-        return 
-    
-    print(f"DEBUG EMAIL: Tentativo invio aggiornamento da {from_email} a {len(recipients)} persone.")
-
-    try:
-        html_content = f"""
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-            <div style="background-color: #10b981; padding: 20px; text-align: center; color: white;">
-                <h2 style="margin: 0;">Task Force Update</h2>
-                <p style="margin: 5px 0 0 0; opacity: 0.9;">Project: <strong>{project_name}</strong></p>
-            </div>
-            <div style="padding: 30px; background-color: #ffffff;">
-                <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">
-                    <strong>{author_name}</strong> ha pubblicato un nuovo aggiornamento:
-                </p>
-                <div style="background-color: #f8fafc; border-left: 4px solid #10b981; padding: 15px; border-radius: 4px; color: #334155; white-space: pre-wrap;">
-{update_content}
-                </div>
-                <div style="margin-top: 30px; text-align: center;">
-                    <a href="https://sales-insight-bot.onrender.com/task-force" style="display: inline-block; background-color: #10b981; color: white; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: bold;">Vai alla Dashboard</a>
-                </div>
-            </div>
-            <div style="background-color: #f1f5f9; padding: 15px; text-align: center; color: #94a3b8; font-size: 12px;">
-                Nexus Hub &bull; Notifica Automatica
-            </div>
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: #10b981; padding: 20px; text-align: center; color: white;">
+            <h2 style="margin: 0;">Task Force Update</h2>
+            <p style="margin: 5px 0 0 0; opacity: 0.9;">Project: <strong>{project_name}</strong></p>
         </div>
-        """
-        
-        # Invia l'email batch o singola. Per test usiamo uno per uno, oppure bcc se Resend lo supporta facilmente.
-        # Resend permette di inviare a un array di To, ma i destinatari vedranno gli altri.
-        # È meglio inviare individualmente o usare BCC. Usiamo To per il primo e Bcc per gli altri.
-        
-        # NOTA: Per un account free di Resend potrebbero esserci restrizioni sui domini verificati. 
-        # Assicurati di usare l'email verificata sul tuo account come "From".
-        # Es: "onboarding@resend.dev" se non hai un dominio personalizzato configurato regolarmente.
-        
-        # In modalità test (onboarding@resend.dev), Resend accetta solo l'email del proprietario.
-        is_testing_domain = "onboarding@resend.dev" in from_email
-        
-        for email in recipients:
-            try:
-                # Se siamo in test e l'email non è quella verificata, saltiamo per evitare 403
-                if is_testing_domain and email != "2209raffae@gmail.com":
-                    print(f"DEBUG EMAIL: Saltando {email} (Restrizione Testing Domain)")
-                    continue
-
-                resend.Emails.send({
-                    "from": from_email,
-                    "to": [email],
-                    "subject": f"[{project_name}] Nuovo Aggiornamento Task Force",
-                    "html": html_content
-                })
-                print(f"DEBUG EMAIL: Inviata a {email}")
-            except Exception as e:
-                print(f"Errore invio a {email}: {e}")
-    except Exception as e:
-        print(f"Errore generale Resend: {e}")
+        <div style="padding: 30px; background-color: #ffffff;">
+            <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">
+                <strong>{author_name}</strong> ha pubblicato un nuovo aggiornamento:
+            </p>
+            <div style="background-color: #f8fafc; border-left: 4px solid #10b981; padding: 15px; border-radius: 4px; color: #334155; white-space: pre-wrap;">{update_content}</div>
+        </div>
+    </div>
+    """
+    is_testing_domain = "onboarding@resend.dev" in from_email
+    for email in recipients:
+        try:
+            if is_testing_domain and email != "2209raffae@gmail.com": continue
+            resend.Emails.send({"from": from_email, "to": [email], "subject": f"[{project_name}] Aggiornamento", "html": html_content})
+        except: pass
 
 def send_creation_email(project_name: str, creator_name: str, recipients: List[str]):
-    """Invia un'email di benvenuto alla creazione della Task Force."""
     resend.api_key = os.getenv("RESEND_API_KEY")
     from_email = os.getenv("RESEND_FROM_EMAIL", "Nexus Hub <onboarding@resend.dev>")
-    
-    if not resend.api_key or not recipients:
-        return
-
-    try:
-        html_content = f"""
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background-color: #0f172a;">
-            <div style="padding: 40px 20px; text-align: center;">
-                <div style="display: inline-block; padding: 10px; background-color: #10b98120; border-radius: 50%; margin-bottom: 20px;">
-                    <span style="font-size: 40px;">🚀</span>
-                </div>
-                <h1 style="color: #ffffff; margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">Missione Inizializzata</h1>
-                <p style="color: #10b981; font-weight: bold; margin-top: 10px;">{project_name}</p>
-            </div>
-            <div style="padding: 30px; background-color: #ffffff; border-radius: 20px 20px 0 0;">
-                <p style="color: #475569; font-size: 16px; line-height: 1.6;">
-                    Ciao <strong>{creator_name}</strong>, la tua nuova Task Force è ora operativa nel Nexus Hub.
-                </p>
-                <div style="margin: 25px 0; padding: 20px; background-color: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1;">
-                    <p style="margin: 0; color: #64748b; font-size: 13px;">Prossimi passi:</p>
-                    <ul style="color: #334155; font-size: 14px; padding-left: 20px; margin-top: 10px;">
-                        <li>Invita specialisti nel team</li>
-                        <li>Definisci il piano d'azione</li>
-                        <li>Inizia il briefing in chat</li>
-                    </ul>
-                </div>
-                <div style="text-align: center; margin-top: 30px;">
-                    <a href="https://sales-insight-bot.onrender.com/task-force" style="display: inline-block; background-color: #0f172a; color: white; text-decoration: none; padding: 15px 30px; border-radius: 8px; font-weight: bold; font-size: 14px;">Apri Mission Control</a>
-                </div>
-            </div>
-            <div style="padding: 20px; text-align: center; color: #64748b; font-size: 11px; background-color: #ffffff;">
-                Nexus Hub &bull; Task Force Manager AI
-            </div>
-        </div>
-        """
-        is_testing_domain = "onboarding@resend.dev" in from_email
-        
-        for email in recipients:
-            try:
-                if is_testing_domain and email != "2209raffae@gmail.com":
-                    continue
-                
-                resend.Emails.send({
-                    "from": from_email,
-                    "to": [email],
-                    "subject": f"🚀 Task Force Inizializzata: {project_name}",
-                    "html": html_content
-                })
-            except Exception:
-                pass
-    except Exception as e:
-        print(f"Errore invio email creazione: {e}")
+    if not resend.api_key or not recipients: return
+    html_content = f"<div style='color:white; background:#0f172a; padding:20px;'><h1>Missione Inizializzata: {project_name}</h1><p>Ciao {creator_name}, la missione è ora operativa.</p></div>"
+    is_testing_domain = "onboarding@resend.dev" in from_email
+    for email in recipients:
+        try:
+            if is_testing_domain and email != "2209raffae@gmail.com": continue
+            resend.Emails.send({"from": from_email, "to": [email], "subject": f"🚀 Task Force: {project_name}", "html": html_content})
+        except: pass
 
 def send_status_email(project_name: str, new_status: str, recipients: List[str]):
-    """Notifica il cambio di stato del progetto."""
     resend.api_key = os.getenv("RESEND_API_KEY")
     from_email = os.getenv("RESEND_FROM_EMAIL", "Nexus Hub <onboarding@resend.dev>")
-    
-    if not resend.api_key or not recipients:
-        print(f"DEBUG EMAIL STATUS: Key missing or no recipients.")
-        return
-
-    print(f"DEBUG EMAIL STATUS: Tentativo invio cambio stato da {from_email} a {len(recipients)} persone.")
-
-    status_colors = {
-        "attivo": "#10b981",
-        "completato": "#3b82f6",
-        "sospeso": "#ef4444"
-    }
-    color = status_colors.get(new_status, "#64748b")
-
-    try:
-        html_content = f"""
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-            <div style="background-color: {color}; padding: 20px; text-align: center; color: white;">
-                <h2 style="margin: 0;">Aggiornamento Stato Task Force</h2>
-                <p style="margin: 5px 0 0 0; opacity: 0.9;">Project: <strong>{project_name}</strong></p>
-            </div>
-            <div style="padding: 30px; background-color: #ffffff; text-align: center;">
-                <p style="color: #64748b; font-size: 16px;">
-                    Lo stato del progetto è stato aggiornato a:
-                </p>
-                <div style="display: inline-block; padding: 10px 25px; background-color: {color}20; color: {color}; border: 2px solid {color}; border-radius: 50px; font-weight: bold; font-size: 18px; text-transform: uppercase; margin: 20px 0;">
-                    {new_status}
-                </div>
-                <p style="color: #94a3b8; font-size: 14px; margin-top: 20px;">
-                    Accedi alla dashboard per vedere i nuovi task o partecipare alla discussione.
-                </p>
-                <div style="margin-top: 30px;">
-                    <a href="https://sales-insight-bot.onrender.com/task-force" style="display: inline-block; background-color: {color}; color: white; text-decoration: none; padding: 12px 25px; border-radius: 6px; font-weight: bold;">Vai al Progetto</a>
-                </div>
-            </div>
-            <div style="background-color: #f1f5f9; padding: 15px; text-align: center; color: #94a3b8; font-size: 12px;">
-                Nexus Hub &bull; Notifica di Sistema
-            </div>
-        </div>
-        """
-        is_testing_domain = "onboarding@resend.dev" in from_email
-
-        for email in recipients:
-            try:
-                if is_testing_domain and email != "2209raffae@gmail.com":
-                    print(f"DEBUG EMAIL STATUS: Skipping {email} (Testing Mode restriction)")
-                    continue
-                
-                resend.Emails.send({
-                    "from": from_email,
-                    "to": [email],
-                    "subject": f"[{project_name}] Stato aggiornato: {new_status.upper()}",
-                    "html": html_content
-                })
-                print(f"DEBUG EMAIL STATUS: Mail stato inviata a {email}")
-            except Exception as e:
-                print(f"Errore invio mail stato a {email}: {e}")
-
-    except Exception as e:
-        print(f"Errore invio email stato: {e}")
-
-
-# ── Routes ─────────────────────────────────────────────────────────────────────
-
-@router.get("/projects", response_model=List[ProjectOut])
-def get_projects(user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Ritorna i progetti a cui l'utente partecipa, o tutti se è admin."""
-    if user.is_admin == 1:
-        projects = db.query(TaskForceProject).order_by(TaskForceProject.created_at.desc()).all()
-    else:
-        # Seleziona i progetti dove l'utente è membro
-        member_project_ids = db.query(TaskForceMember.project_id).filter(TaskForceMember.user_id == user.id).subquery()
-        projects = db.query(TaskForceProject).filter(TaskForceProject.id.in_(member_project_ids)).order_by(TaskForceProject.created_at.desc()).all()
-    return projects
-
-
-@router.get("/operators", response_model=List[dict])
-def list_available_operators(user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Ritorna una lista base di utenti che possono essere aggiunti a una task force."""
-    # Qualunque utente autenticato può vedere la lista basi degli altri utenti per invitarli
-    users = db.query(UserProfile).all()
-    return [{"id": u.id, "first_name": u.first_name, "last_name": u.last_name, "email": u.email} for u in users]
-
-
-@router.post("/projects", response_model=ProjectOut)
-def create_project(req: ProjectCreate, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Crea un nuovo progetto e aggiunge il creatore come Leader."""
-    proj = TaskForceProject(
-        name=req.name,
-        description=req.description,
-        created_by=user.id
-    )
-    db.add(proj)
-    db.commit()
-    db.refresh(proj)
-
-    # Aggiungi creatore come Leader
-    member = TaskForceMember(
-        project_id=proj.id,
-        user_id=user.id,
-        role="Leader"
-    )
-    db.add(member)
-    db.commit()
-
-    # Invia email di conferma creazione al creatore
-    if user.email:
-        send_creation_email(proj.name, user.first_name or user.email, [user.email])
-
-    return proj
-
-
-@router.get("/projects/{project_id}", response_model=ProjectDetailOut)
-def get_project_detail(project_id: int, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Ritorna i dettagli, i membri e gli updates del progetto."""
-    proj = db.query(TaskForceProject).filter(TaskForceProject.id == project_id).first()
-    if not proj:
-        raise HTTPException(status_code=404, detail="Progetto non trovato")
-
-    # Verifica accesso
-    if user.is_admin != 1:
-        is_member = db.query(TaskForceMember).filter(TaskForceMember.project_id == project_id, TaskForceMember.user_id == user.id).first()
-        if not is_member:
-            raise HTTPException(status_code=403, detail="Non fai parte di questo progetto")
-
-    # Estrai membri joinando UserProfile
-    members = db.query(TaskForceMember, UserProfile).join(UserProfile, TaskForceMember.user_id == UserProfile.id).filter(TaskForceMember.project_id == project_id).all()
-    member_list = [
-        MemberOut(
-            id=m.id,
-            user_id=p.id,
-            role=m.role,
-            first_name=p.first_name,
-            last_name=p.last_name,
-            email=p.email
-        )
-        for m, p in members
-    ]
-
-    # Estrai updates joinando UserProfile
-    updates = db.query(TaskForceUpdate, UserProfile).join(UserProfile, TaskForceUpdate.author_id == UserProfile.id).filter(TaskForceUpdate.project_id == project_id).order_by(TaskForceUpdate.created_at.asc()).all()
-    update_list = [
-        UpdateOut(
-            id=u.id,
-            author_id=p.id,
-            author_name=f"{p.first_name} {p.last_name}",
-            content=u.content,
-            created_at=u.created_at
-        )
-        for u, p in updates
-    ]
-
-    return ProjectDetailOut(
-        id=proj.id,
-        name=proj.name,
-        description=proj.description,
-        status=proj.status,
-        created_at=proj.created_at,
-        created_by=proj.created_by,
-        members=member_list,
-        updates=update_list
-    )
-
-
-@router.put("/projects/{project_id}/status", response_model=ProjectOut)
-def update_project_status(project_id: int, req: ProjectStatusUpdate, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Aggiorna lo stato del progetto (solo Admin o Leader)."""
-    proj = db.query(TaskForceProject).filter(TaskForceProject.id == project_id).first()
-    if not proj:
-        raise HTTPException(status_code=404, detail="Progetto non trovato")
-
-    # Verifica permessi: Admin o Creatore del progetto (o Leader)
-    if user.is_admin != 1 and user.id != proj.created_by:
-        is_leader = db.query(TaskForceMember).filter(
-            TaskForceMember.project_id == project_id,
-            TaskForceMember.user_id == user.id,
-            TaskForceMember.role == "Leader"
-        ).first()
-        if not is_leader:
-            raise HTTPException(status_code=403, detail="Non hai i permessi per modificare lo stato di questo progetto")
-
-    if req.status not in ["attivo", "completato", "sospeso"]:
-        raise HTTPException(status_code=400, detail="Stato non valido")
-
-    proj.status = req.status
-    db.commit()
-    db.refresh(proj)
-
-    # Invia email di notifica a tutti i membri se lo stato è completato o sospeso
-    if req.status in ["completato", "sospeso"]:
-        # Query corretta per ottenere una lista di stringhe email
-        results = db.query(UserProfile.email).join(TaskForceMember, UserProfile.id == TaskForceMember.user_id).filter(TaskForceMember.project_id == project_id).all()
-        recipients = [r[0] for r in results if r[0]] 
-        if recipients:
-            send_status_email(proj.name, req.status, recipients)
-
-    return proj
-
-
-@router.delete("/projects/{project_id}")
-def delete_project(project_id: int, user: UserProfile = Depends(require_admin), db: Session = Depends(get_db)):
-    """Elimina un progetto (solo Admin)."""
-    proj = db.query(TaskForceProject).filter(TaskForceProject.id == project_id).first()
-    if not proj:
-        raise HTTPException(status_code=404, detail="Progetto non trovato")
-    
-    db.delete(proj)
-    db.commit()
-    return {"detail": "Progetto eliminato"}
-
-
-@router.post("/projects/{project_id}/members", response_model=MemberOut)
-def add_member(project_id: int, req: MemberAdd, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Aggiunge un membro al progetto (solo admin o chi e' gia membro puo invitare)."""
-    proj = db.query(TaskForceProject).filter(TaskForceProject.id == project_id).first()
-    if not proj:
-        raise HTTPException(status_code=404, detail="Progetto non trovato")
-
-    # Verifica se l'utente che invita e' Admin o Leader del progetto
-    if user.is_admin != 1:
-        is_leader = db.query(TaskForceMember).filter(
-            TaskForceMember.project_id == project_id, 
-            TaskForceMember.user_id == user.id,
-            TaskForceMember.role == "Leader"
-        ).first()
-        if not is_leader:
-            raise HTTPException(status_code=403, detail="Solo l'Admin o il Leader del progetto possono aggiungere membri")
-
-    # Controllo esistenza user da invitare
-    target_user = db.query(UserProfile).filter(UserProfile.id == req.user_id).first()
-    if not target_user:
-        raise HTTPException(status_code=404, detail="Utente da invitare non trovato")
-
-    # Duplicate check
-    existing = db.query(TaskForceMember).filter(TaskForceMember.project_id == project_id, TaskForceMember.user_id == req.user_id).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="L'utente è già membro del progetto")
-
-    member = TaskForceMember(
-        project_id=project_id,
-        user_id=req.user_id,
-        role=req.role
-    )
-    db.add(member)
-    db.commit()
-    db.refresh(member)
-
-    # Invia email di benvenuto al nuovo membro aggiunto
-    if target_user.email:
-        send_creation_email(proj.name, target_user.first_name or target_user.email, [target_user.email])
-
-    return MemberOut(
-        id=member.id,
-        user_id=target_user.id,
-        role=member.role,
-        first_name=target_user.first_name,
-        last_name=target_user.last_name,
-        email=target_user.email
-    )
-
-@router.delete("/projects/{project_id}/members/{user_id}")
-def remove_member(project_id: int, user_id: int, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Rimuove un membro."""
-    member = db.query(TaskForceMember).filter(TaskForceMember.project_id == project_id, TaskForceMember.user_id == user_id).first()
-    if not member:
-        raise HTTPException(status_code=404, detail="Membro non trovato in questo progetto")
-    db.delete(member)
-    db.commit()
-    return {"detail": "Membro rimosso"}
-
+    if not resend.api_key or not recipients: return
+    color = "#10b981" if new_status=="attivo" else "#3b82f6"
+    html_content = f"<div style='text-align:center;'><h2>Stato Aggiornato: {new_status}</h2><p>Progetto: {project_name}</p></div>"
+    is_testing_domain = "onboarding@resend.dev" in from_email
+    for email in recipients:
+        try:
+            if is_testing_domain and email != "2209raffae@gmail.com": continue
+            resend.Emails.send({"from": from_email, "to": [email], "subject": f"[{project_name}] Stato: {new_status.upper()}", "html": html_content})
+        except: pass
 
 # ── WebSocket Manager ───────────────────────────────────────────────────────────
-from fastapi import WebSocket, WebSocketDisconnect
 
 class ConnectionManager:
     def __init__(self):
-        # project_id -> list of websockets
         self.active_connections: dict[int, List[WebSocket]] = {}
-
     async def connect(self, websocket: WebSocket, project_id: int):
         await websocket.accept()
-        if project_id not in self.active_connections:
-            self.active_connections[project_id] = []
+        if project_id not in self.active_connections: self.active_connections[project_id] = []
         self.active_connections[project_id].append(websocket)
-
     def disconnect(self, websocket: WebSocket, project_id: int):
         if project_id in self.active_connections:
-            self.active_connections[project_id].remove(websocket)
-            if not self.active_connections[project_id]:
-                del self.active_connections[project_id]
-
+            if websocket in self.active_connections[project_id]:
+                self.active_connections[project_id].remove(websocket)
+            if not self.active_connections[project_id]: del self.active_connections[project_id]
     async def broadcast(self, message: dict, project_id: int):
         if project_id in self.active_connections:
             for connection in self.active_connections[project_id]:
-                try:
-                    await connection.send_json(message)
-                except Exception:
-                    pass # Connection might be closed, disconnect will handle it
+                try: await connection.send_json(message)
+                except: pass
 
 manager = ConnectionManager()
 
 @router.websocket("/ws/{project_id}")
 async def taskforce_websocket_endpoint(websocket: WebSocket, project_id: int):
-    # Simple check: project exists (optional but good)
-    # Note: In production, verify token from query_params
     await manager.connect(websocket, project_id)
     try:
-        while True:
-            # We don't expect messages FROM the client, just keeping it alive
-            await websocket.receive_text()
-    except WebSocketDisconnect:
-        manager.disconnect(websocket, project_id)
+        while True: await websocket.receive_text()
+    except WebSocketDisconnect: manager.disconnect(websocket, project_id)
+
+# ── Project Routes ─────────────────────────────────────────────────────────────
+
+@router.get("/projects", response_model=List[ProjectOut])
+def get_projects(user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+    if user.is_admin == 1:
+        return db.query(TaskForceProject).order_by(TaskForceProject.created_at.desc()).all()
+    member_project_ids = db.query(TaskForceMember.project_id).filter(TaskForceMember.user_id == user.id).subquery()
+    return db.query(TaskForceProject).filter(TaskForceProject.id.in_(member_project_ids)).order_by(TaskForceProject.created_at.desc()).all()
+
+@router.get("/operators", response_model=List[dict])
+def list_available_operators(user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+    users = db.query(UserProfile).all()
+    return [{"id": u.id, "first_name": u.first_name, "last_name": u.last_name, "email": u.email} for u in users]
+
+@router.post("/projects", response_model=ProjectOut)
+def create_project(req: ProjectCreate, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+    proj = TaskForceProject(name=req.name, description=req.description, created_by=user.id)
+    db.add(proj)
+    db.commit()
+    db.refresh(proj)
+    db.add(TaskForceMember(project_id=proj.id, user_id=user.id, role="Leader"))
+    db.commit()
+    if user.email: send_creation_email(proj.name, user.first_name or user.email, [user.email])
+    return proj
+
+@router.get("/projects/{project_id}", response_model=ProjectDetailOut)
+def get_project_detail(project_id: int, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+    proj = db.query(TaskForceProject).filter(TaskForceProject.id == project_id).first()
+    if not proj: raise HTTPException(status_code=404, detail="Progetto non trovato")
+    if user.is_admin != 1:
+        if not db.query(TaskForceMember).filter(TaskForceMember.project_id == project_id, TaskForceMember.user_id == user.id).first():
+            raise HTTPException(status_code=403, detail="Accesso negato")
+    
+    members = db.query(TaskForceMember, UserProfile).join(UserProfile, TaskForceMember.user_id == UserProfile.id).filter(TaskForceMember.project_id == project_id).all()
+    updates = db.query(TaskForceUpdate, UserProfile).join(UserProfile, TaskForceUpdate.author_id == UserProfile.id).filter(TaskForceUpdate.project_id == project_id).order_by(TaskForceUpdate.created_at.asc()).all()
+    
+    return ProjectDetailOut(
+        **proj.__dict__,
+        members=[MemberOut(id=m.id, user_id=p.id, role=m.role, first_name=p.first_name, last_name=p.last_name, email=p.email) for m, p in members],
+        updates=[UpdateOut(id=u.id, author_id=p.id, author_name=f"{p.first_name} {p.last_name}", content=u.content, attachment_path=u.attachment_path, attachment_type=u.attachment_type, created_at=u.created_at) for u, p in updates]
+    )
+
+@router.put("/projects/{project_id}/status", response_model=ProjectOut)
+def update_project_status(project_id: int, req: ProjectStatusUpdate, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+    proj = db.query(TaskForceProject).filter(TaskForceProject.id == project_id).first()
+    if not proj: raise HTTPException(status_code=404, detail="Progetto non trovato")
+    if user.is_admin != 1 and user.id != proj.created_by:
+        if not db.query(TaskForceMember).filter(TaskForceMember.project_id==project_id, TaskForceMember.user_id==user.id, TaskForceMember.role=="Leader").first():
+            raise HTTPException(status_code=403, detail="Permessi insufficienti")
+    proj.status = req.status
+    db.commit()
+    if req.status in ["completato", "sospeso"]:
+        emails = [r[0] for r in db.query(UserProfile.email).join(TaskForceMember).filter(TaskForceMember.project_id == project_id).all() if r[0]]
+        if emails: send_status_email(proj.name, req.status, emails)
+    return proj
+
+@router.delete("/projects/{project_id}")
+def delete_project(project_id: int, user: UserProfile = Depends(require_admin), db: Session = Depends(get_db)):
+    proj = db.query(TaskForceProject).filter(TaskForceProject.id == project_id).first()
+    if proj:
+        db.delete(proj)
+        db.commit()
+    return {"detail": "Progetto eliminato"}
+
+# ── Member Routes ─────────────────────────────────────────────────────────────
+
+@router.post("/projects/{project_id}/members", response_model=MemberOut)
+def add_member(project_id: int, req: MemberAdd, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+    if user.is_admin != 1:
+        if not db.query(TaskForceMember).filter(TaskForceMember.project_id==project_id, TaskForceMember.user_id==user.id, TaskForceMember.role=="Leader").first():
+            raise HTTPException(status_code=403, detail="Solo Leader o Admin")
+    target = db.query(UserProfile).filter(UserProfile.id == req.user_id).first()
+    if not target: raise HTTPException(status_code=404, detail="Utente non trovato")
+    if db.query(TaskForceMember).filter(TaskForceMember.project_id == project_id, TaskForceMember.user_id == req.user_id).first():
+        raise HTTPException(status_code=400, detail="Gia membro")
+    mem = TaskForceMember(project_id=project_id, user_id=req.user_id, role=req.role)
+    db.add(mem); db.commit(); db.refresh(mem)
+    if target.email: send_creation_email(db.query(TaskForceProject).get(project_id).name, target.first_name, [target.email])
+    return MemberOut(id=mem.id, user_id=target.id, role=mem.role, first_name=target.first_name, last_name=target.last_name, email=target.email)
+
+@router.delete("/projects/{project_id}/members/{user_id}")
+def remove_member(project_id: int, user_id: int, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+    mem = db.query(TaskForceMember).filter(TaskForceMember.project_id == project_id, TaskForceMember.user_id == user_id).first()
+    if mem: db.delete(mem); db.commit()
+    return {"detail": "Membro rimosso"}
 
 @router.post("/suggest-members", response_model=List[SuggestResult])
 def suggest_members(req: SuggestMembersRequest, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Suggerisce i membri basandosi sulla descrizione del problema e le competenze."""
-    # 1. Recupera tutte le categorie
-    categories = db.query(ExpertiseCategory).all()
-    cat_list = [{"id": c.id, "name": c.name} for c in categories]
-    
-    if not cat_list:
-        return []
-
-    # 2. Chiama l'AI per mappare descrizione -> categorie
-    matched_cat_ids = match_problem_to_expertise(req.description, cat_list)
-    
-    if not matched_cat_ids:
-        return []
-
-    # 3. Recupera gli utenti che hanno quelle competenze E hanno accesso alla task force (o sono admin)
+    cat_list = [{"id": c.id, "name": c.name} for c in db.query(ExpertiseCategory).all()]
+    matched_ids = match_problem_to_expertise(req.description, cat_list)
+    if not matched_ids: return []
     from models import UserPermission
-    
-    query = db.query(UserProfile, ExpertiseCategory.name).join(
-        UserExpertise, UserProfile.id == UserExpertise.user_id
-    ).join(
-        ExpertiseCategory, UserExpertise.category_id == ExpertiseCategory.id
-    ).outerjoin(
-        UserPermission, UserProfile.id == UserPermission.user_id
-    ).filter(
-        ExpertiseCategory.id.in_(matched_cat_ids),
-        ((UserPermission.agent_slug == 'task-force') | (UserProfile.is_admin == 1))
+    query = db.query(UserProfile, ExpertiseCategory.name).join(UserExpertise).join(ExpertiseCategory).outerjoin(UserPermission).filter(
+        ExpertiseCategory.id.in_(matched_ids), ((UserPermission.agent_slug == 'task-force') | (UserProfile.is_admin == 1))
     ).all()
-
-    # Raggruppa per utente (un utente potrebbe avere più categorie matchate)
     user_map = {}
-    for u, cat_name in query:
-        if u.id not in user_map:
-            user_map[u.id] = {
-                "user_id": u.id,
-                "first_name": u.first_name,
-                "last_name": u.last_name,
-                "email": u.email,
-                "matched_categories": []
-            }
-        if cat_name not in user_map[u.id]["matched_categories"]:
-            user_map[u.id]["matched_categories"].append(cat_name)
-
+    for u, cat in query:
+        if u.id not in user_map: user_map[u.id] = {"user_id": u.id, "first_name": u.first_name, "last_name": u.last_name, "email": u.email, "matched_categories": []}
+        if cat not in user_map[u.id]["matched_categories"]: user_map[u.id]["matched_categories"].append(cat)
     return list(user_map.values())
 
-
-from fastapi import File, UploadFile, Form
-import shutil
-import uuid
+# ── Update & Todo Routes ──────────────────────────────────────────────────────
 
 @router.post("/projects/{project_id}/updates", response_model=UpdateOut)
-async def post_update(
-    project_id: int, 
-    content: str = Form(...), 
-    file: Optional[UploadFile] = File(None),
-    user: UserProfile = Depends(get_current_user), 
-    db: Session = Depends(get_db)
-):
-    """Pubblica un aggiornamento (con eventuale file) e notifica in real-time."""
-    proj = db.query(TaskForceProject).filter(TaskForceProject.id == project_id).first()
-    if not proj:
-        raise HTTPException(status_code=404, detail="Progetto non trovato")
-
-    attachment_path = None
-    attachment_type = None
-
+async def post_update(project_id: int, content: str = Form(""), file: Optional[UploadFile] = File(None), user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+    proj = db.query(TaskForceProject).get(project_id)
+    if not proj: raise HTTPException(status_code=404)
+    path, mtype = None, None
     if file:
-        # Crea directory se non esiste
-        upload_dir = os.path.join("static", "uploads", "taskforce")
-        os.makedirs(upload_dir, exist_ok=True)
-        
-        file_ext = os.path.splitext(file.filename)[1] if file.filename else ""
-        file_name = f"{uuid.uuid4()}{file_ext}"
-        file_path = os.path.join(upload_dir, file_name)
-        
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-            
-        attachment_path = f"/static/uploads/taskforce/{file_name}"
-        attachment_type = file.content_type
-
-    # Aggiungi update
-    update = TaskForceUpdate(
-        project_id=project_id,
-        author_id=user.id,
-        content=content,
-        attachment_path=attachment_path,
-        attachment_type=attachment_type
-    )
-    db.add(update)
-    db.commit()
-    db.refresh(update)
-
-    # Preparazione dati per broadcast ed email
-    author_name = f"{user.first_name} {user.last_name}"
-    update_data = {
-        "id": update.id,
-        "author_id": user.id,
-        "author_name": author_name,
-        "content": update.content,
-        "attachment_path": update.attachment_path,
-        "attachment_type": update.attachment_type,
-        "created_at": update.created_at.isoformat()
-    }
-
-    # 1. Broadcast via WebSocket (Real-time)
-    await manager.broadcast(update_data, project_id)
-
-    # 2. Invia email in background (opzionale: potresti usare BackgroundTasks)
-    members = db.query(TaskForceMember, UserProfile).join(UserProfile, TaskForceMember.user_id == UserProfile.id).filter(TaskForceMember.project_id == project_id).all()
-    recipients = [p.email for m, p in members if p.id != user.id]
-
-    if recipients:
-        try:
-            send_update_email(proj.name, content, author_name, recipients)
-        except Exception:
-            pass 
-
-    return update_data
-
-# ── Todo Routes ──────────────────────────────────────────────────────────────
-from models import TaskForceTodo
+        ext = os.path.splitext(file.filename)[1].lower()
+        if ext not in {'.png', '.jpg', '.jpeg', '.pdf', '.docx', '.xlsx', '.txt', '.zip'}: raise HTTPException(status_code=400, detail="File non supportato")
+        os.makedirs("static/uploads/taskforce", exist_ok=True)
+        fname = f"{uuid.uuid4()}{ext}"
+        path = f"/static/uploads/taskforce/{fname}"
+        with open(f"static/uploads/taskforce/{fname}", "wb") as b: shutil.copyfileobj(file.file, b)
+        mtype = file.content_type
+    upd = TaskForceUpdate(project_id=project_id, author_id=user.id, content=content, attachment_path=path, attachment_type=mtype)
+    db.add(upd); db.commit(); db.refresh(upd)
+    data = {"id": upd.id, "author_id": user.id, "author_name": f"{user.first_name} {user.last_name}", "content": upd.content, "attachment_path": upd.attachment_path, "attachment_type": upd.attachment_type, "created_at": upd.created_at.isoformat()}
+    await manager.broadcast(data, project_id)
+    return data
 
 @router.get("/projects/{project_id}/tasks", response_model=List[TodoOut])
 def get_tasks(project_id: int, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Lista i task di un progetto."""
     return db.query(TaskForceTodo).filter(TaskForceTodo.project_id == project_id).order_by(TaskForceTodo.created_at.asc()).all()
 
 @router.post("/projects/{project_id}/tasks", response_model=TodoOut)
 async def create_task(project_id: int, req: TodoCreate, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Crea un nuovo task e notifica via WebSocket."""
-    todo = TaskForceTodo(
-        project_id=project_id,
-        content=req.content,
-        assigned_to=req.assigned_to
-    )
-    db.add(todo)
-    db.commit()
-    db.refresh(todo)
-
-    # Notifica via WebSocket con un tipo speciale
-    await manager.broadcast({
-        "type": "todo_new",
-        "data": {
-            "id": todo.id,
-            "project_id": todo.project_id,
-            "content": todo.content,
-            "assigned_to": todo.assigned_to,
-            "is_done": todo.is_done,
-            "created_at": todo.created_at.isoformat()
-        }
-    }, project_id)
-
+    todo = TaskForceTodo(project_id=project_id, content=req.content, assigned_to=req.assigned_to)
+    db.add(todo); db.commit(); db.refresh(todo)
+    await manager.broadcast({"type": "todo_new", "data": {**todo.__dict__, "created_at": todo.created_at.isoformat()}}, project_id)
     return todo
 
 @router.patch("/tasks/{task_id}/toggle", response_model=TodoOut)
 async def toggle_task(task_id: int, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Inverte lo stato del task (completato/da fare) e notifica via WebSocket."""
-    todo = db.query(TaskForceTodo).filter(TaskForceTodo.id == task_id).first()
-    if not todo:
-        raise HTTPException(status_code=404, detail="Task non trovato")
-    
+    todo = db.query(TaskForceTodo).get(task_id)
+    if not todo: raise HTTPException(404)
     todo.is_done = 1 if todo.is_done == 0 else 0
     db.commit()
-    db.refresh(todo)
-
-    # Notifica via WebSocket
-    await manager.broadcast({
-        "type": "todo_update",
-        "data": {
-            "id": todo.id,
-            "is_done": todo.is_done
-        }
-    }, todo.project_id)
-
+    await manager.broadcast({"type": "todo_update", "data": {"id": todo.id, "is_done": todo.is_done}}, todo.project_id)
     return todo
+
+@router.put("/projects/{project_id}/briefing", response_model=ProjectOut)
+def update_briefing(project_id: int, req: BriefingUpdate, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+    proj = db.query(TaskForceProject).get(project_id)
+    if not proj: raise HTTPException(404)
+    proj.briefing_md = req.briefing_md
+    db.commit(); db.refresh(proj)
+    return proj
+
+@router.post("/projects/{project_id}/sitrep", response_model=SITREPResponse)
+def get_sitrep(project_id: int, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+    proj = db.query(TaskForceProject).get(project_id)
+    if not proj: raise HTTPException(404)
+    upds = db.query(TaskForceUpdate, UserProfile).join(UserProfile, TaskForceUpdate.author_id == UserProfile.id).filter(TaskForceUpdate.project_id == project_id).order_by(TaskForceUpdate.created_at.desc()).limit(50).all()
+    tasks = db.query(TaskForceTodo).filter(TaskForceTodo.project_id == project_id).all()
+    
+    upd_data = [{"author_name": f"{p.first_name} {p.last_name}", "content": u.content, "created_at": u.created_at.isoformat()} for u, p in upds]
+    task_data = [{"content": t.content, "is_done": t.is_done == 1} for t in tasks]
+    
+    try:
+        report = generate_sitrep(proj.name, proj.description or "", upd_data, task_data)
+        return {"sitrep": report}
+    except Exception as e:
+        raise HTTPException(500, detail=str(e))

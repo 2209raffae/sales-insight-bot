@@ -73,9 +73,17 @@ async def enforce_utf8_charset(request: Request, call_next):
 
 @app.on_event("startup")
 def on_startup():
-    from database import run_migrations
-    Base.metadata.create_all(bind=engine)      # creates new tables if not present
-    run_migrations()                           # adds missing columns to existing tables
+    try:
+        from database import run_migrations
+        print("Creating tables...")
+        Base.metadata.create_all(bind=engine)      # creates new tables if not present
+        print("Running migrations...")
+        run_migrations()                           # adds missing columns to existing tables
+        print("Startup complete.")
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise e
 
 
 # Include routers
@@ -137,8 +145,10 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
+    import traceback
+    traceback.print_exc() # Print the real error to console
     if request.url.path.startswith("/api"):
-        return JSONResponse(status_code=500, content={"detail": "Internal server error."})
+        return JSONResponse(status_code=500, content={"detail": str(exc)})
     return JSONResponse(status_code=500, content={"detail": "Internal server error."})
 
 

@@ -189,3 +189,56 @@ Non aggiungere spiegazioni, restituisci solo il JSON.
         return []
     except Exception:
         return []
+
+
+def generate_sitrep(
+    project_name: str,
+    project_description: str,
+    updates: list[dict],
+    tasks: list[dict],
+    model: str | None = None,
+) -> str:
+    """
+    Generates a Situation Report (SITREP) based on the latest 50 updates and the current task list.
+    """
+    client = _get_client()
+    model = model or os.getenv("MODEL", "llama-3.1-8b-instant")
+
+    # Format context for AI
+    updates_str = "\n".join([f"- [{u['created_at']}] {u['author_name']}: {u['content'][:200]}" for u in updates])
+    tasks_str = "\n".join([f"- [{'DONE' if t['is_done'] else 'PENDING'}] {t['content']}" for t in tasks])
+
+    context = f"""
+Sei l'AI di Mission Control per la Task Force: "{project_name}".
+Obiettivo: Generare un Situation Report (SITREP) conciso partendo dalla cronologia chat e dai task.
+
+CRONOLOGIA CHAT (Ultimi messaggi):
+{updates_str}
+
+STATO TASK:
+{tasks_str}
+
+REGOLE DI RISPOSTA:
+- Lingua: Italiano.
+- Lunghezza: Max 300 parole.
+- Stile: Professionale, militare, orientato all'azione.
+- Formato Markdown:
+  1) **Sintesi Operativa** (Stato attuale)
+  2) **Traguardi Raggiunti** (Basati sulla chat)
+  3) **Criticità & Blocchi**
+  4) **Prossimi Passi Consigliati** (Azioni concrete)
+"""
+
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "Sei l'AI di Mission Control per una Task Force operativa. Il tuo obiettivo e la massima efficienza informativa."},
+                {"role": "user", "content": context},
+            ],
+            temperature=0.4,
+            max_tokens=800,
+        )
+        return response.choices[0].message.content or "Impossibile generare il report SITREP."
+    except Exception as e:
+        return f"Errore durante la generazione del SITREP IA: {str(e)}"

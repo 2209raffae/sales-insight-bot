@@ -173,6 +173,7 @@ class TaskForceProject(Base):
     status      = Column(String, default="attivo") # "attivo", "completato", "sospeso"
     created_at  = Column(DateTime, default=datetime.utcnow)
     created_by  = Column(Integer, ForeignKey("user_profiles.id", ondelete="CASCADE"), nullable=False)
+    briefing_md = Column(Text, nullable=True) # Nucleo della missione / Knowledge base
 
 
 class TaskForceMember(Base):
@@ -211,3 +212,30 @@ class TaskForceTodo(Base):
     assigned_to = Column(Integer, ForeignKey("user_profiles.id", ondelete="CASCADE"), nullable=True)
     is_done     = Column(Integer, default=0) # 0=pending, 1=done
     created_at  = Column(DateTime, default=datetime.utcnow)
+
+
+# ── Competitor Radar Pro ──────────────────────────────────────────────────────
+
+class CompetitorSettings(Base):
+    """Global settings for Competitor Radar (e.g. Own Website URL)."""
+    __tablename__ = "competitor_settings"
+    
+    id              = Column(Integer, primary_key=True, index=True)
+    own_website_url = Column(String, nullable=True)
+
+
+class CompetitorBattleCard(Base):
+    """Saved analysis of a competitor website with historical comparison."""
+    __tablename__ = "competitor_battle_cards"
+
+    id               = Column(Integer, primary_key=True, index=True)
+    url              = Column(String, nullable=False, index=True)
+    company_name     = Column(String)
+    summary          = Column(Text)
+    pricing_strategy = Column(Text)
+    usp             = Column(Text) # JSON string array
+    weaknesses       = Column(Text) # JSON string array
+    target_audience  = Column(Text)
+    pitch_advice     = Column(Text)
+    comparison_analysis = Column(Text) # AI-generated tips on how to improve vs this competitor
+    created_at       = Column(DateTime, default=datetime.utcnow)

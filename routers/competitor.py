@@ -1,13 +1,24 @@
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
 import httpx
 from bs4 import BeautifulSoup
 import os
+import json
 from openai import AsyncOpenAI
 from routers.auth import get_current_user
-from models import UserProfile
+from models import UserProfile, CompetitorSettings, CompetitorBattleCard
+from database import SessionLocal
+from sqlalchemy.orm import Session
+from datetime import datetime
 
 router = APIRouter(prefix="/api/competitor", tags=["Competitor Radar"])
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 # Initialize Groq client
 client = AsyncOpenAI(
@@ -16,9 +27,13 @@ client = AsyncOpenAI(
 )
 
 class AnalyzeRequest(BaseModel):
-    url: str # Stringa flessibile, aggiungiamo https:// se manca
+    url: str
 
-class AnalyzeResponse(BaseModel):
+class SettingsRequest(BaseModel):
+    own_website_url: str
+
+class BattleCardResponse(BaseModel):
+    id: int
     url: str
     company_name: str
     summary: str
@@ -27,6 +42,11 @@ class AnalyzeResponse(BaseModel):
     weaknesses: list[str]
     target_audience: str
     pitch_advice: str
+    comparison_analysis: str | None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 async def fetch_website_text(url: str) -> str:
     """Fetches and extracts text from a website."""
@@ -40,51 +60,97 @@ async def fetch_website_text(url: str) -> str:
             response = await http_client.get(url)
             response.raise_for_status()
             
-            # Use BeautifulSoup to extract text
             soup = BeautifulSoup(response.text, 'html.parser')
-            
-            # Remove script and style elements
             for script in soup(["script", "style", "nav", "footer"]):
                 script.decompose()
                 
             text = soup.get_text(separator=' ', strip=True)
-            # Limit to first 6000 chars to avoid token limits
             return text[:6000]
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Errore durante l'accesso al sito URL: {str(e)}")
 
-@router.post("/analyze", response_model=AnalyzeResponse)
-async def analyze_competitor(req: AnalyzeRequest, user: UserProfile = Depends(get_current_user)):
-    """Analyzes a competitor's website URL and generates a battle card using Groq AI."""
+@router.get("/settings")
+async def get_settings(db: Session = Depends(get_db)):
+    settings = db.query(CompetitorSettings).first()
+    return {"own_website_url": settings.own_website_url if settings else ""}
+
+@router.post("/settings")
+async def update_settings(req: SettingsRequest, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not user.is_admin:
+        raise HTTPException(status_code=403, detail="Solo gli amministratori possono modificare il sito aziendale.")
     
-    url_str = req.url.strip()
-    if not url_str.startswith(("http://", "https://")):
-        url_str = "https://" + url_str
+    settings = db.query(CompetitorSettings).first()
+    if not settings:
+        settings = CompetitorSettings(own_website_url=req.own_website_url)
+        db.add(settings)
+    else:
+        settings.own_website_url = req.own_website_url
     
-    # 1. Scrape the website
-    website_text = await fetch_website_text(url_str)
+    db.commit()
+    return {"status": "success", "own_website_url": settings.own_website_url}
+
+@router.get("/history", response_model=list[BattleCardResponse])
+async def get_history(db: Session = Depends(get_db)):
+    cards = db.query(CompetitorBattleCard).order_by(CompetitorBattleCard.created_at.desc()).all()
+    # Ensure lists are actually lists (since stored as Text/JSON in DB)
+    for card in cards:
+        if isinstance(card.usp, str): card.usp = json.loads(card.usp)
+        if isinstance(card.weaknesses, str): card.weaknesses = json.loads(card.weaknesses)
+    return cards
+
+@router.delete("/{card_id}")
+async def delete_card(card_id: int, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+    card = db.query(CompetitorBattleCard).filter(CompetitorBattleCard.id == card_id).first()
+    if not card:
+        raise HTTPException(status_code=404, detail="Analisi non trovata.")
+    db.delete(card)
+    db.commit()
+    return {"status": "success"}
+
+@router.post("/analyze", response_model=BattleCardResponse)
+async def analyze_competitor(req: AnalyzeRequest, user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Analyzes a competitor vs own website and saves the Battle Card."""
+    
+    comp_url = req.url.strip()
+    if not comp_url.startswith(("http://", "https://")):
+        comp_url = "https://" + comp_url
+    
+    # 1. Get Own Website Text
+    settings = db.query(CompetitorSettings).first()
+    own_url = settings.own_website_url if settings else None
+    own_text = ""
+    if own_url:
+        try:
+            own_text = await fetch_website_text(own_url)
+        except:
+            own_text = "[Impossibile caricare il proprio sito per il benchmark]"
+
+    # 2. Scrape Competitor Website
+    website_text = await fetch_website_text(comp_url)
     
     if not website_text or len(website_text) < 100:
-        raise HTTPException(status_code=400, detail="Impossibile estrarre contenuto sufficiente dal sito web.")
+        raise HTTPException(status_code=400, detail="Impossibile estrarre contenuto dal sito concorrente.")
     
-    # 2. Analyze with Groq AI
+    # 3. AI Comparison Analysis
     system_prompt = """
-    Sei un analista di mercato esperto in Competitive Intelligence per un'azienda B2B/SaaS italiana. 
-    Il tuo compito è analizzare il testo estratto dal sito web di un potenziale concorrente e generare una "Battle Card" dettagliata in ITALIANO.
+    Sei un analista di mercato esperto in Competitive Intelligence. 
+    Analizza il sito del CONCORRENTE rispetto al NOSTRO SITO (se fornito).
+    Genera una "Battle Card" strategica e un "Piano di Miglioramento" per noi.
     
-    RISPONDI ESATTAMENTE IN QUESTO FORMATO JSON VALIDO E NULL'ALTRO:
+    RISPONDI ESATTAMENTE IN QUESTO FORMATO JSON:
     {
-        "company_name": "Nome Azienda (se si capisce, altrimenti il dominio)",
-        "summary": "Breve riassunto di 2-3 frasi su cosa fa l'azienda e il suo posizionamento.",
-        "pricing_strategy": "Descrizione di come prezzano (es. Premium, freemium, preventivo custom, costo basso, ecc). Se non esplicito, fai una deduzione motivata.",
-        "usp": ["Punto di forza 1", "Punto di forza 2", "Punto di forza 3"],
-        "weaknesses": ["Possibile debolezza 1", "Possibile debolezza 2"],
-        "target_audience": "Chi è il loro cliente ideale (es: PMI, Enterprise, B2C).",
-        "pitch_advice": "Un paragrafo di consiglio per i nostri commerciali su come vendere CONTRO questo concorrente. Quale leva usare?"
+        "company_name": "Nome Azienda",
+        "summary": "Cosa fanno e posizionamento.",
+        "pricing_strategy": "Come prezzano.",
+        "usp": ["Punto forza 1", "Punto forza 2"],
+        "weaknesses": ["Debolezza 1", "Debolezza 2"],
+        "target_audience": "Cliente ideale.",
+        "pitch_advice": "Come vendere contro di loro.",
+        "comparison_analysis": "Benchmark: dove siamo meglio noi e cosa dobbiamo cambiare sul NOSTRO sito per batterli (3 consigli pratici)."
     }
     """
     
-    user_prompt = f"URL Concorrente: {url_str}\n\nTesto estratto dal sito:\n---\n{website_text}\n---\nGenera l'analisi JSON."
+    user_prompt = f"NOSTRO SITO:\n{own_text}\n\nSITO CONCORRENTE:\n{website_text}\n\nGenera l'analisi comparativa JSON."
     
     try:
         response = await client.chat.completions.create(
@@ -97,22 +163,41 @@ async def analyze_competitor(req: AnalyzeRequest, user: UserProfile = Depends(ge
             response_format={"type": "json_object"}
         )
         
-        result_str = response.choices[0].message.content
-        import json
-        result = json.loads(result_str)
+        result = json.loads(response.choices[0].message.content)
         
-        return AnalyzeResponse(
-            url=url_str,
+        # 4. Save to Database
+        new_card = CompetitorBattleCard(
+            url=comp_url,
             company_name=result.get("company_name", "Sconosciuto"),
-            summary=result.get("summary", "N/A"),
-            pricing_strategy=result.get("pricing_strategy", "N/A"),
+            summary=result.get("summary", ""),
+            pricing_strategy=result.get("pricing_strategy", ""),
+            usp=json.dumps(result.get("usp", [])),
+            weaknesses=json.dumps(result.get("weaknesses", [])),
+            target_audience=result.get("target_audience", ""),
+            pitch_advice=result.get("pitch_advice", ""),
+            comparison_analysis=result.get("comparison_analysis", ""),
+            created_at=datetime.utcnow()
+        )
+        db.add(new_card)
+        db.commit()
+        db.refresh(new_card)
+        
+        # Prepare response safely from result and new_card
+        return BattleCardResponse(
+            id=new_card.id,
+            url=new_card.url,
+            company_name=result.get("company_name", ""),
+            summary=result.get("summary", ""),
+            pricing_strategy=result.get("pricing_strategy", ""),
             usp=result.get("usp", []),
             weaknesses=result.get("weaknesses", []),
-            target_audience=result.get("target_audience", "N/A"),
-            pitch_advice=result.get("pitch_advice", "N/A")
+            target_audience=result.get("target_audience", ""),
+            pitch_advice=result.get("pitch_advice", ""),
+            comparison_analysis=result.get("comparison_analysis", ""),
+            created_at=new_card.created_at
         )
         
-    except httpx.HTTPError:
-        raise HTTPException(status_code=500, detail="Errore di rete durante la chiamata a Groq API.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Errore nell'analisi AI: {str(e)}")
+        import traceback
+        traceback.print_exc() # Still logging for safety
+        raise HTTPException(status_code=500, detail=f"Errore analisi AI: {str(e)}")

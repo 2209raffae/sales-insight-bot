@@ -68,9 +68,15 @@ def run_migrations():
             "ALTER TABLE upload_batches ADD COLUMN IF NOT EXISTS mapping_used VARCHAR",
             "ALTER TABLE upload_batches ADD COLUMN IF NOT EXISTS reject_reasons VARCHAR"
         ],
+        "task_force_projects": [
+            "ALTER TABLE task_force_projects ADD COLUMN IF NOT EXISTS briefing_md TEXT"
+        ],
         "task_force_updates": [
             "ALTER TABLE task_force_updates ADD COLUMN IF NOT EXISTS attachment_path TEXT",
             "ALTER TABLE task_force_updates ADD COLUMN IF NOT EXISTS attachment_type TEXT"
+        ],
+        "user_profiles": [
+            "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS is_admin INTEGER DEFAULT 0"
         ]
     }
 
