@@ -239,3 +239,24 @@ class CompetitorBattleCard(Base):
     pitch_advice     = Column(Text)
     comparison_analysis = Column(Text) # AI-generated tips on how to improve vs this competitor
     created_at       = Column(DateTime, default=datetime.utcnow)
+
+
+# ── Warehouse Intelligence Agent (Universal Stock) ──────────────────────────
+
+class WarehouseProduct(Base):
+    """Universal inventory item with dynamic metadata and e-commerce sync support."""
+    __tablename__ = "warehouse_products"
+
+    id             = Column(Integer, primary_key=True, index=True)
+    sku            = Column(String, unique=True, nullable=False, index=True) # Source of Truth for sync
+    name           = Column(String, nullable=False, index=True)
+    category       = Column(String, index=True)
+    purchase_price = Column(Float, default=0.0)
+    selling_price  = Column(Float, default=0.0) # Suggested or actual selling price
+    quantity       = Column(Integer, default=0)
+    status         = Column(String, default="Disponibile", index=True) # "Disponibile", "Prenotato", "Venduto", "Esaurito"
+    metadata_json  = Column(Text, nullable=True) # JSON flexible storage for category-specific fields
+    sync_status    = Column(Integer, default=0) # 0=PendingSync, 1=Synced, 2=Error
+    last_sync      = Column(DateTime, nullable=True)
+    created_at     = Column(DateTime, default=datetime.utcnow)
+    updated_at     = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

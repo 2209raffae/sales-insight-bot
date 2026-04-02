@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import {
   Bot, Database, ChevronLeft, Users, DollarSign, Target, FileText,
-  ArrowRight, Activity, Zap, Briefcase, Shield, LogOut
+  ArrowRight, Activity, Zap, Briefcase, Shield, LogOut, Package
 } from 'lucide-react';
 import React, { useEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -24,6 +24,9 @@ import CompetitorRadarPage from './pages/CompetitorRadarPage';
 
 // Pagine Task Force
 import TaskForcePage from './pages/TaskForcePage';
+
+// Pagine Warehouse
+import WarehousePage from './pages/WarehousePage';
 
 // Auth Pages
 import LoginPage from './pages/LoginPage';
@@ -256,6 +259,7 @@ const NEXUS_AGENTS: NavItem[] = [
   { icon: Users, label: 'HR & Talent Copilot', desc: 'Performance dipendenti, CV screening, policy bot', to: '/hr-copilot', accent: '#a855f7', glow: 'rgba(168,85,247,0.35)', badge: 'ACTIVE', slug: 'hr-copilot' },
   { icon: Target, label: 'Competitor Radar', desc: 'Analisi concorrenza AI e battle cards strategiche', to: '/competitor-radar', accent: '#f59e0b', glow: 'rgba(245,158,11,0.35)', badge: 'NEW', slug: 'competitor-radar' },
   { icon: Shield, label: 'Task Force Manager', desc: 'Gestione progetti critici e update email AI', to: '/task-force', accent: '#10b981', glow: 'rgba(16,185,129,0.35)', badge: 'NEW', slug: 'task-force' },
+  { icon: Package, label: 'Warehouse Intelligence', desc: 'Analisi predittiva stock e sync e-commerce', to: '/warehouse', accent: '#00ffcc', glow: 'rgba(0,255,204,0.35)', badge: 'AI', slug: 'warehouse-intelligence' },
 ];
 
 const SALES_MODULES: NavItem[] = [
@@ -321,7 +325,7 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
   } else if (path.startsWith('/hr-copilot/')) {
     backTo = '/hr-copilot';
     backLabel = 'Torna all\'Agente HR';
-  } else if (path === '/sales-insight' || path === '/hr-copilot' || path === '/competitor-radar' || path === '/task-force') {
+  } else if (path === '/sales-insight' || path === '/hr-copilot' || path === '/competitor-radar' || path === '/task-force' || path === '/warehouse') {
     backTo = '/';
     backLabel = 'Nexus Hub';
   } else if (path === '/admin') {
@@ -329,7 +333,7 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
     backLabel = 'Nexus Hub';
   }
 
-  const isAgentHub = path === '/' || path === '/sales-insight' || path === '/hr-copilot' || path === '/competitor-radar' || path === '/task-force';
+  const isAgentHub = path === '/' || path === '/sales-insight' || path === '/hr-copilot' || path === '/competitor-radar' || path === '/task-force' || path === '/warehouse';
   const isAuthPage = path === '/login' || path === '/register';
 
   return (
@@ -391,6 +395,9 @@ const AppRoutes = () => (
 
       {/* Agente: Task Force Manager */}
       <Route path="/task-force" element={<ProtectedRoute><PermissionGuard agent="task-force"><TaskForcePage /></PermissionGuard></ProtectedRoute>} />
+
+      {/* Agente: Warehouse intelligence */}
+      <Route path="/warehouse" element={<ProtectedRoute><PermissionGuard agent="warehouse-intelligence"><WarehousePage /></PermissionGuard></ProtectedRoute>} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
