@@ -126,7 +126,9 @@ os.makedirs(os.path.join("static", "uploads", "taskforce"), exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 if os.path.isdir(frontend_dist):
-    app.mount("/assets", UTF8StaticFiles(directory=os.path.join(frontend_dist, "assets")), name="assets")
+    assets_dir = os.path.join(frontend_dist, "assets")
+    if os.path.isdir(assets_dir):
+        app.mount("/assets", UTF8StaticFiles(directory=assets_dir), name="assets")
 
     @app.get("/{full_path:path}")
     async def serve_react_app(full_path: str):
