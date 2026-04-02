@@ -1,4 +1,3 @@
-
 # env
 .env
 *.env
@@ -6,8 +5,25 @@
 app.db
 __pycache__/
 .venv/
+venv/
+node_modules/
 
+# build
+dist/
+build/
+frontend/dist/
+frontend/node_modules/
 
-# secrets
-.env
+# logs
+*.log
+err.txt
+error.txt
+final_err.txt
+backend_crash.log
+backend_error.log
+uvicorn.*.log
 
+# Other
+.DS_Store
+.vscode/
+.idea/
