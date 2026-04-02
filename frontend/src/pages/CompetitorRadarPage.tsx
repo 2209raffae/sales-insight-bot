@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-    Radar, Search, Target, TrendingUp, AlertTriangle, 
+    Radar, TrendingUp, AlertTriangle, 
     Crosshair, Building, Link as LinkIcon, Zap, 
     History, Trash2, ShieldCheck, Globe, ArrowRight,
     CheckCircle2, Pencil, Save, X
@@ -25,7 +25,7 @@ interface BattleCard {
 const CompetitorRadarPage = () => {
     const [url, setUrl] = useState('');
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [_error, setError] = useState('');
     const [result, setResult] = useState<BattleCard | null>(null);
     const [history, setHistory] = useState<BattleCard[]>([]);
     const [ownWebsite, setOwnWebsite] = useState('');

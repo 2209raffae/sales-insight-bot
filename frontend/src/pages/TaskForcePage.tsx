@@ -320,7 +320,7 @@ const TaskForcePage = () => {
         }
     };
 
-    const handleToggleTodo = async (todoId: number, currentStatus?: number) => {
+    const handleToggleTodo = async (todoId: number) => {
         try {
             await axios.patch(`/api/taskforce/tasks/${todoId}/toggle`, {}, {
                 headers: { Authorization: `Bearer ${token}` }

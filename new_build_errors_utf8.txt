@@ -1,0 +1,8 @@
+﻿
+> frontend@0.0.0 build
+> tsc -b && vite build
+
+src/pages/CompetitorRadarPage.tsx(4,12): error TS6133: 'Search' is declared but its value is never read.
+src/pages/CompetitorRadarPage.tsx(4,20): error TS6133: 'Target' is declared but its value is never read.
+src/pages/CompetitorRadarPage.tsx(28,12): error TS6133: 'error' is declared but its value is never read.
+src/pages/TaskForcePage.tsx(323,53): error TS6133: 'currentStatus' is declared but its value is never read.

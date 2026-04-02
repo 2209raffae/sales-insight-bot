@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DollarSign, AlertCircle, Edit2, Trash2, Calendar, Zap, Bot } from 'lucide-react';
+import { DollarSign, AlertCircle, Edit2, Trash2, Calendar, Zap, Bot as BotIcon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, AreaChart, Area } from 'recharts';
 import axios from 'axios';
 
@@ -332,7 +332,7 @@ const SpendPage = () => {
 
                                         {forecastText && (
                                             <div className="bg-black/60 border border-neon-purple/50 p-6 rounded-xl font-mono text-sm leading-relaxed text-gray-300">
-                                                <div className="text-neon-purple mb-2 flex items-center gap-2 uppercase tracking-widest text-xs font-bold"><Bot size={16} /> Nexus Predictor</div>
+                                                <div className="text-neon-purple mb-2 flex items-center gap-2 uppercase tracking-widest text-xs font-bold"><BotIcon size={16} /> Nexus Predictor</div>
                                                 <div dangerouslySetInnerHTML={{ __html: forecastText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>').replace(/\n/g, '<br/>') }}></div>
                                             </div>
                                         )}
