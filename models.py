@@ -7,6 +7,7 @@ from datetime import datetime
 from sqlalchemy import (
     Column, Integer, String, Float, DateTime, UniqueConstraint, ForeignKey, Text
 )
+from sqlalchemy.orm import relationship
 from database import Base
 
 
@@ -260,3 +261,127 @@ class WarehouseProduct(Base):
     last_sync      = Column(DateTime, nullable=True)
     created_at     = Column(DateTime, default=datetime.utcnow)
     updated_at     = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # ── E-commerce fields ───────────────────────────────────────────────────────
+    is_visible     = Column(Integer, default=1)  # 1=visible on e-commerce, 0=hidden
+    ecommerce_url  = Column(String, nullable=True)  # External product URL for reference
+    reorder_point  = Column(Integer, default=3)  # Threshold for low-stock alert
+    # ── New Logistic fields ──────────────────────────────────────────────────
+    location       = Column(String, nullable=True) # e.g. "A-12-3"
+    width          = Column(Float, default=0.0)
+    height         = Column(Float, default=0.0)
+    depth          = Column(Float, default=0.0)
+    is_packaging   = Column(Integer, default=0) # 1 if this IS a box/packaging, 0 otherwise
+
+class WarehouseMovement(Base):
+    """Tracks every stock change (Carico, Scarico, Vendita, Rettifica)."""
+    __tablename__ = "warehouse_movements"
+
+    id           = Column(Integer, primary_key=True, index=True)
+    product_id   = Column(Integer, ForeignKey("warehouse_products.id", ondelete="CASCADE"))
+    movement_type = Column(String, nullable=False) # "Carico", "Vendita", "Reso", "Rettifica", "Prezzo"
+    quantity_delta = Column(Integer, default=0) # + for In, - for Out
+    old_value    = Column(Float, nullable=True) # Old price or quantity if relevant
+    new_value    = Column(Float, nullable=True) # New price or quantity
+    notes        = Column(Text, nullable=True)
+    performed_by = Column(String, nullable=True) # User email or name
+    created_at   = Column(DateTime, default=datetime.utcnow)
+
+    product = relationship("WarehouseProduct", backref="movements")
+
+class WarehouseOrder(Base):
+    """
+    Manages both Online (from Leads) and Physical In-Store orders.
+    """
+    __tablename__ = "warehouse_orders"
+
+    id           = Column(Integer, primary_key=True, index=True)
+    lead_id      = Column(Integer, ForeignKey("lead_records.id", ondelete="SET NULL"), nullable=True) # Linked CRM lead
+    customer_name = Column(String, nullable=False) # Keep for legacy/combined
+    customer_first_name = Column(String, nullable=True)
+    customer_last_name = Column(String, nullable=True)
+    customer_email = Column(String, nullable=True)
+    shipping_address = Column(String, nullable=True) # Summary
+    shipping_street  = Column(String, nullable=True)
+    shipping_city    = Column(String, nullable=True)
+    shipping_zip     = Column(String, nullable=True)
+    shipping_province = Column(String, nullable=True)
+    shipping_country  = Column(String, nullable=True)
+    phone_number = Column(String, nullable=True)
+    shipping_fee = Column(Float, default=0.0)
+    total_amount = Column(Float, default=0.0)
+    status       = Column(String, default="Da Preparare", index=True) # "Bozza", "Da Preparare", "In Preparazione", "Pronto", "Spedito", "Annullato"
+    order_channel = Column(String, default="Online", index=True) # "Online", "Fisico"
+    notes        = Column(Text, nullable=True)
+    # AI-generated fields (persisted once, never re-computed)
+    ai_packaging  = Column(String, nullable=True)   # e.g. "Scatola M"
+    ai_reason     = Column(String, nullable=True)   # picking position rationale
+    ai_analyzed   = Column(Integer, default=0)      # 0=pending, 1=done
+    created_at   = Column(DateTime, default=datetime.utcnow)
+    updated_at   = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
+    shipment = relationship("Shipment", back_populates="order", uselist=False)
+
+class OrderItem(Base):
+    """Junction for multiple products per order."""
+    __tablename__ = "order_items"
+
+    id          = Column(Integer, primary_key=True, index=True)
+    order_id    = Column(Integer, ForeignKey("warehouse_orders.id", ondelete="CASCADE"), nullable=False)
+    product_id  = Column(Integer, ForeignKey("warehouse_products.id", ondelete="RESTRICT"), nullable=False)
+    quantity    = Column(Integer, default=1)
+    unit_price  = Column(Float, nullable=False)
+
+    order = relationship("WarehouseOrder", back_populates="items")
+    product = relationship("WarehouseProduct")
+
+class Shipment(Base):
+    """Logistics and tracking details for an order."""
+    __tablename__ = "shipments"
+
+    id             = Column(Integer, primary_key=True, index=True)
+    order_id       = Column(Integer, ForeignKey("warehouse_orders.id", ondelete="CASCADE"), unique=True)
+    courier_name   = Column(String, nullable=True) # DHL, GLS, UPS, etc.
+    tracking_code  = Column(String, nullable=True)
+    shipment_status = Column(String, default="In elaborazione", index=True) # "In elaborazione", "In transito", "Consegnato"
+    label_url      = Column(String, nullable=True)
+    estimated_delivery = Column(DateTime, nullable=True)
+    shipped_at     = Column(DateTime, nullable=True)
+
+    order = relationship("WarehouseOrder", back_populates="shipment")
+
+# ── CRM Agent ────────────────────────────────────────────────────────────────
+
+class CRMCustomer(Base):
+    """Unified customer profiles for the CRM Agent."""
+    __tablename__ = "crm_customers"
+
+    id                 = Column(Integer, primary_key=True, index=True)
+    phone_number       = Column(String, unique=True, nullable=False, index=True)
+    name               = Column(String, nullable=False)
+    first_name         = Column(String, nullable=True)
+    last_name          = Column(String, nullable=True)
+    email              = Column(String, nullable=True)
+    address            = Column(String, nullable=True)
+    street             = Column(String, nullable=True)
+    city               = Column(String, nullable=True)
+    zip_code           = Column(String, nullable=True)
+    province           = Column(String, nullable=True)
+    country            = Column(String, nullable=True)
+    total_spent        = Column(Float, default=0.0)
+    orders_count       = Column(Integer, default=0)
+    last_purchase_date = Column(DateTime, nullable=True)
+    created_at         = Column(DateTime, default=datetime.utcnow)
+    updated_at         = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class CRMAutomation(Base):
+    """Logs of automated marketing campaigns initiated from the CRM."""
+    __tablename__ = "crm_automations"
+
+    id            = Column(Integer, primary_key=True, index=True)
+    campaign_name = Column(String, nullable=False)
+    prompt_used   = Column(Text, nullable=False)
+    email_content = Column(Text, nullable=False)
+    sent_count    = Column(Integer, default=0)
+    status        = Column(String, default="Completato")
+    created_at    = Column(DateTime, default=datetime.utcnow)

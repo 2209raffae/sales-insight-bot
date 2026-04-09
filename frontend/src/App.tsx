@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import {
   Bot, Database, ChevronLeft, Users, DollarSign, Target, FileText,
-  ArrowRight, Activity, Zap, Briefcase, Shield, LogOut, Package
+  ArrowRight, Activity, Zap, Briefcase, Shield, LogOut, Package, Truck
 } from 'lucide-react';
 import React, { useEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -27,6 +27,10 @@ import TaskForcePage from './pages/TaskForcePage';
 
 // Pagine Warehouse
 import WarehousePage from './pages/WarehousePage';
+
+// Pagine Logistica & CRM
+import LogisticsPage from './pages/LogisticsPage';
+import CRMPage from './pages/CRMPage';
 
 // Auth Pages
 import LoginPage from './pages/LoginPage';
@@ -260,6 +264,8 @@ const NEXUS_AGENTS: NavItem[] = [
   { icon: Target, label: 'Competitor Radar', desc: 'Analisi concorrenza AI e battle cards strategiche', to: '/competitor-radar', accent: '#f59e0b', glow: 'rgba(245,158,11,0.35)', badge: 'NEW', slug: 'competitor-radar' },
   { icon: Shield, label: 'Task Force Manager', desc: 'Gestione progetti critici e update email AI', to: '/task-force', accent: '#10b981', glow: 'rgba(16,185,129,0.35)', badge: 'NEW', slug: 'task-force' },
   { icon: Package, label: 'Warehouse Intelligence', desc: 'Analisi predittiva stock e sync e-commerce', to: '/warehouse', accent: '#00ffcc', glow: 'rgba(0,255,204,0.35)', badge: 'AI', slug: 'warehouse-intelligence' },
+  { icon: Truck, label: 'Logistics & Order Hub', desc: 'Gestione ordini, spedizioni e cruscotto preparazione', to: '/logistics', accent: '#6366f1', glow: 'rgba(99,102,241,0.35)', badge: 'PRO', slug: 'logistics-hub' },
+  { icon: Users, label: 'CRM & Clienti', desc: 'Anagrafiche unificate e Marketing AI', to: '/crm', accent: '#f43f5e', glow: 'rgba(244,63,94,0.35)', badge: 'CORE', slug: 'crm' },
 ];
 
 const SALES_MODULES: NavItem[] = [
@@ -325,7 +331,7 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
   } else if (path.startsWith('/hr-copilot/')) {
     backTo = '/hr-copilot';
     backLabel = 'Torna all\'Agente HR';
-  } else if (path === '/sales-insight' || path === '/hr-copilot' || path === '/competitor-radar' || path === '/task-force' || path === '/warehouse') {
+  } else if (path === '/sales-insight' || path === '/hr-copilot' || path === '/competitor-radar' || path === '/task-force' || path === '/warehouse' || path === '/logistics' || path === '/crm') {
     backTo = '/';
     backLabel = 'Nexus Hub';
   } else if (path === '/admin') {
@@ -398,6 +404,12 @@ const AppRoutes = () => (
 
       {/* Agente: Warehouse intelligence */}
       <Route path="/warehouse" element={<ProtectedRoute><PermissionGuard agent="warehouse-intelligence"><WarehousePage /></PermissionGuard></ProtectedRoute>} />
+
+      {/* Agente: Logistica */}
+      <Route path="/logistics" element={<ProtectedRoute><LogisticsPage /></ProtectedRoute>} />
+
+      {/* Agente: CRM */}
+      <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

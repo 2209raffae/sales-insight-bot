@@ -1,0 +1,64 @@
+﻿python : C:\Users\PC Deskto
+p\AppData\Roaming\Python\Py
+thon314\site-packages\pydan
+tic\_internal\_config.py:38
+3: UserWarning: Valid 
+config keys have changed 
+in V2:
+In riga:1 car:1
++ python main.py > 
+error.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~
+    + CategoryInfo         
+     : NotSpecified: (C:\  
+  Users\PC Des... change   
+ d in V2::String) [], R    
+emoteException
+    + FullyQualifiedErrorI 
+   d : NativeCommandError
+ 
+* 'orm_mode' has been 
+renamed to 
+'from_attributes'
+  warnings.warn(message, 
+UserWarning)
+C:\Users\PC Desktop\.gemini
+\antigravity\scratch\sales-
+insight-bot\main.py:74: 
+DeprecationWarning: 
+        on_event is 
+deprecated, use lifespan 
+event handlers instead.
+
+        Read more about it 
+in the
+        [FastAPI docs for 
+Lifespan Events](https://fa
+stapi.tiangolo.com/advanced
+/events/).
+        
+  @app.on_event("startup")
+INFO:     Started server 
+process [15380]
+INFO:     Waiting for 
+application startup.
+INFO:     Application 
+startup complete.
+ERROR:    [Errno 10048] 
+error while attempting to 
+bind on address 
+('0.0.0.0', 4000): 
+[winerror 10048] di norma 
+Þ consentito un solo 
+utilizzo di ogni indirizzo 
+di socket 
+(protocollo/indirizzo di 
+rete/porta)
+INFO:     Waiting for 
+application shutdown.
+INFO:     Application 
+shutdown complete.
+Creating tables...
+Running migrations...
+Startup complete.

@@ -77,30 +77,59 @@ def run_migrations():
         ],
         "user_profiles": [
             "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS is_admin INTEGER DEFAULT 0"
+        ],
+        "warehouse_orders": [
+            "ALTER TABLE warehouse_orders ADD COLUMN IF NOT EXISTS \"shipping_address\" VARCHAR",
+            "ALTER TABLE warehouse_orders ADD COLUMN IF NOT EXISTS \"phone_number\" VARCHAR",
+            "ALTER TABLE warehouse_orders ADD COLUMN IF NOT EXISTS \"ai_packaging\" VARCHAR",
+            "ALTER TABLE warehouse_orders ADD COLUMN IF NOT EXISTS \"ai_reason\" VARCHAR",
+            "ALTER TABLE warehouse_orders ADD COLUMN IF NOT EXISTS \"ai_analyzed\" INTEGER DEFAULT 0",
+            "ALTER TABLE warehouse_orders ADD COLUMN IF NOT EXISTS \"customer_first_name\" VARCHAR",
+            "ALTER TABLE warehouse_orders ADD COLUMN IF NOT EXISTS \"customer_last_name\" VARCHAR",
+            "ALTER TABLE warehouse_orders ADD COLUMN IF NOT EXISTS \"customer_email\" VARCHAR",
+            "ALTER TABLE warehouse_orders ADD COLUMN IF NOT EXISTS \"shipping_fee\" FLOAT DEFAULT 0.0",
+            "ALTER TABLE warehouse_orders ADD COLUMN IF NOT EXISTS \"shipping_street\" VARCHAR",
+            "ALTER TABLE warehouse_orders ADD COLUMN IF NOT EXISTS \"shipping_city\" VARCHAR",
+            "ALTER TABLE warehouse_orders ADD COLUMN IF NOT EXISTS \"shipping_zip\" VARCHAR",
+            "ALTER TABLE warehouse_orders ADD COLUMN IF NOT EXISTS \"shipping_province\" VARCHAR",
+            "ALTER TABLE warehouse_orders ADD COLUMN IF NOT EXISTS \"shipping_country\" VARCHAR"
+        ],
+        "crm_customers": [
+            "ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS \"first_name\" VARCHAR",
+            "ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS \"last_name\" VARCHAR",
+            "ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS \"email\" VARCHAR",
+            "ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS \"street\" VARCHAR",
+            "ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS \"city\" VARCHAR",
+            "ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS \"zip_code\" VARCHAR",
+            "ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS \"province\" VARCHAR",
+            "ALTER TABLE crm_customers ADD COLUMN IF NOT EXISTS \"country\" VARCHAR"
+        ],
+        "warehouse_products": [
+            "ALTER TABLE warehouse_products ADD COLUMN IF NOT EXISTS location VARCHAR",
+            "ALTER TABLE warehouse_products ADD COLUMN IF NOT EXISTS width FLOAT DEFAULT 0.0",
+            "ALTER TABLE warehouse_products ADD COLUMN IF NOT EXISTS height FLOAT DEFAULT 0.0",
+            "ALTER TABLE warehouse_products ADD COLUMN IF NOT EXISTS depth FLOAT DEFAULT 0.0",
+            "ALTER TABLE warehouse_products ADD COLUMN IF NOT EXISTS is_packaging INTEGER DEFAULT 0"
         ]
     }
 
     try:
-        with engine.begin() as conn:
-            # Note: SQLite doesn't support 'IF NOT EXISTS' in ALTER TABLE ADD COLUMN.
-            # But the user is using Postgres (Supabase).
-            # For robustness, we wrap each execution.
-            is_sqlite = engine.url.drivername.startswith("sqlite")
-            
-            for table, cmds in commands.items():
-                for cmd in cmds:
-                    try:
-                        # If SQLite, we remove IF NOT EXISTS or handle differently
-                        # Actually, keeping it as is for Postgres and wrapping in try/except for SQLite
+        # Note: SQLite doesn't support 'IF NOT EXISTS' in ALTER TABLE ADD COLUMN.
+        # But the user is using Postgres (Supabase).
+        is_sqlite = engine.url.drivername.startswith("sqlite")
+        
+        for table, cmds in commands.items():
+            for cmd in cmds:
+                try:
+                    # We run each command in its own mini-transaction to avoid aborting the whole process
+                    with engine.begin() as conn:
                         if is_sqlite:
-                            # SQLite doesn't like IF NOT EXISTS
                             raw_cmd = cmd.replace(" IF NOT EXISTS", "")
                             conn.execute(text(raw_cmd))
                         else:
                             conn.execute(text(cmd))
-                    except Exception:
-                        # Column might already exist
-                        pass
+                except Exception:
+                    pass
     except Exception as e:
         print(f"Migration error: {e}")
         pass

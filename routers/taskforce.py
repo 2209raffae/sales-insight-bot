@@ -267,9 +267,21 @@ def suggest_members(req: SuggestMembersRequest, user: UserProfile = Depends(get_
     matched_ids = match_problem_to_expertise(req.description, cat_list)
     if not matched_ids: return []
     from models import UserPermission
-    query = db.query(UserProfile, ExpertiseCategory.name).join(UserExpertise).join(ExpertiseCategory).outerjoin(UserPermission).filter(
-        ExpertiseCategory.id.in_(matched_ids), ((UserPermission.agent_slug == 'task-force') | (UserProfile.is_admin == 1))
-    ).all()
+    from sqlalchemy import and_, or_
+    query = (
+        db.query(UserProfile, ExpertiseCategory.name)
+        .join(UserExpertise, UserExpertise.user_id == UserProfile.id)
+        .join(ExpertiseCategory, ExpertiseCategory.id == UserExpertise.category_id)
+        .outerjoin(
+            UserPermission,
+            and_(UserPermission.user_id == UserProfile.id, UserPermission.agent_slug == 'task-force')
+        )
+        .filter(
+            ExpertiseCategory.id.in_(matched_ids),
+            or_(UserPermission.id != None, UserProfile.is_admin == 1)
+        )
+        .all()
+    )
     user_map = {}
     for u, cat in query:
         if u.id not in user_map: user_map[u.id] = {"user_id": u.id, "first_name": u.first_name, "last_name": u.last_name, "email": u.email, "matched_categories": []}

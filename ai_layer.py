@@ -242,3 +242,41 @@ REGOLE DI RISPOSTA:
         return response.choices[0].message.content or "Impossibile generare il report SITREP."
     except Exception as e:
         return f"Errore durante la generazione del SITREP IA: {str(e)}"
+
+def generate_crm_email(
+    prompt: str,
+    target_audience: str,
+    context: str,
+    model: str | None = None,
+) -> str:
+    """
+    Generates a personalized marketing email in HTML format.
+    """
+    client = _get_client()
+    model = model or os.getenv("MODEL", "llama-3.1-8b-instant")
+
+    system = f"""Sei un copywriter esperto di Email Marketing. 
+Il tuo obiettivo e scrivere un'email HTML formattata bene basandoti sul prompt dell'utente.
+Devi restituire SOLO il codice HTML dell'email senza Markdown avvolgente (niente ```html).
+Usa uno stile pulito, persuasivo, inserisci un pulsante CTA visibile e un design base inline.
+Target: {target_audience}
+Contesto Aziendale: {context}
+"""
+
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.7,
+            max_tokens=2000,
+        )
+        content = response.choices[0].message.content or "<p>Errore di generazione.</p>"
+        # Pulizia backticks se la risposta li ha messi lo stesso
+        if "```html" in content:
+            content = content.replace("```html", "").replace("```", "")
+        return content.strip()
+    except Exception as e:
+        return f"<p>Errore generativo: {e}</p>"

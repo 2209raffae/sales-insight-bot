@@ -20,7 +20,7 @@ from models import Base, LeadRecord, CampaignSpend, UploadBatch, CampaignMonthly
 from routers import leads_upload, leads_kpi, chat
 from routers import spend_upload, spend_kpi, spend_advanced, uploads, budgets, manual_spend, report
 from routers import hr_screening, hr_performance, hr_chat
-from routers import auth, admin, competitor, taskforce, warehouse, warehouse_upload
+from routers import auth, admin, competitor, taskforce, warehouse, warehouse_upload, logistics, crm
 
 app = FastAPI(
     title="AI Lead & Spend Analytics Copilot",
@@ -106,6 +106,8 @@ app.include_router(competitor.router)
 app.include_router(taskforce.router)
 app.include_router(warehouse.router)
 app.include_router(warehouse_upload.router)
+app.include_router(logistics.router)
+app.include_router(crm.router)
 
 
 
