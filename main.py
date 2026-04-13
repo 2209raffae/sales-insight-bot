@@ -2,6 +2,13 @@
 Sales Insight Bot - AI Lead & Spend Analytics Copilot
 FastAPI application entry point.
 """
+import platform
+platform.system = lambda: "Windows"
+platform.machine = lambda: "AMD64"
+platform.version = lambda: "10.0"
+platform.release = lambda: "10"
+platform.architecture = lambda: ("64bit", "WindowsPE")
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -75,10 +82,9 @@ async def enforce_utf8_charset(request: Request, call_next):
 def on_startup():
     try:
         from database import run_migrations
-        print("Creating tables...")
-        Base.metadata.create_all(bind=engine)      # creates new tables if not present
-        print("Running migrations...")
-        run_migrations()                           # adds missing columns to existing tables
+        print("Skipping tables creation for fast boot...")
+        # Base.metadata.create_all(bind=engine)
+        # run_migrations()
         print("Startup complete.")
     except Exception as e:
         import traceback

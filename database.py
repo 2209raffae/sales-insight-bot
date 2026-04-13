@@ -5,6 +5,7 @@ Provides run_migrations() for safe, idempotent column/table additions on existin
 import os
 from sqlalchemy import create_engine, text, inspect
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy.pool import NullPool
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -21,7 +22,10 @@ else:
     if DATABASE_URL.startswith("postgres://"):
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
         
-    engine = create_engine(DATABASE_URL)
+    engine = create_engine(
+        DATABASE_URL,
+        poolclass=NullPool,
+    )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -41,7 +45,6 @@ def get_db():
 def _existing_columns(conn, table: str) -> set[str]:
     """Return set of column names currently in `table` (engine agnostic)."""
     try:
-        # Usa inspect sulla connessione corrente per evitare deadlock pg
         inspector = inspect(conn)
         columns = inspector.get_columns(table)
         return {col['name'] for col in columns}
@@ -110,18 +113,21 @@ def run_migrations():
             "ALTER TABLE warehouse_products ADD COLUMN IF NOT EXISTS height FLOAT DEFAULT 0.0",
             "ALTER TABLE warehouse_products ADD COLUMN IF NOT EXISTS depth FLOAT DEFAULT 0.0",
             "ALTER TABLE warehouse_products ADD COLUMN IF NOT EXISTS is_packaging INTEGER DEFAULT 0"
+        ],
+        "warehouse_product_images": [
+            "CREATE TABLE IF NOT EXISTS warehouse_product_images (id INTEGER PRIMARY KEY, product_id INTEGER, url VARCHAR, is_primary INTEGER, created_at DATETIME)"
+        ],
+        "crm_email_rules": [
+            "ALTER TABLE crm_email_rules ADD COLUMN IF NOT EXISTS subject TEXT DEFAULT ''",
+            "ALTER TABLE crm_email_rules ADD COLUMN IF NOT EXISTS resend_template_id VARCHAR"
         ]
     }
 
     try:
-        # Note: SQLite doesn't support 'IF NOT EXISTS' in ALTER TABLE ADD COLUMN.
-        # But the user is using Postgres (Supabase).
         is_sqlite = engine.url.drivername.startswith("sqlite")
-        
         for table, cmds in commands.items():
             for cmd in cmds:
                 try:
-                    # We run each command in its own mini-transaction to avoid aborting the whole process
                     with engine.begin() as conn:
                         if is_sqlite:
                             raw_cmd = cmd.replace(" IF NOT EXISTS", "")

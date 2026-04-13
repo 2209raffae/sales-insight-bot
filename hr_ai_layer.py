@@ -21,7 +21,7 @@ def analyze_cv(cv_text: str, job_description: str | None = None) -> dict:
     Extracts structured information from CV text and calculates a match score if a Job Description is provided.
     """
     client = _get_client()
-    model = os.getenv("MODEL", "llama-3.1-8b-instant")
+    model = "llama-3.1-8b-instant"
     
     sys_prompt = "Sei un recruiter esperto. Estrai le informazioni dal CV fornito e restituisci SOLO un JSON valido, senza preamboli o markdown blocks come ```json."
     
@@ -71,7 +71,7 @@ def analyze_performance(kpi_data: dict) -> str:
     Generates a natural language performance review based on employee metrics.
     """
     client = _get_client()
-    model = os.getenv("MODEL", "llama-3.1-8b-instant")
+    model = "llama-3.1-8b-instant"
     
     sys_prompt = "Sei un HR Manager. Il tuo compito è scrivere brevi feedback prestazionali chiari, motivanti e bilanciati."
     
@@ -105,7 +105,7 @@ def policy_chat_reply(chat_history: list, new_message: str) -> str:
     HR Policy bot chat endpoint.
     """
     client = _get_client()
-    model = os.getenv("MODEL", "llama-3.1-8b-instant")
+    model = "llama-3.1-8b-instant"
     
     sys_prompt = """Sei l'Assistente HR AI aziendale. Conosci le policy su ferie, permessi, remote working e benefit.
 Il tuo tono è professionale, empatico e orientato al supporto. Non usare gergo eccessivo.

@@ -4,9 +4,9 @@ import {
   BarChart as ReBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
 import { 
-  Package, Plus, Search, TrendingUp, Edit3, Sparkles, Eye, EyeOff, Trash2, 
-  ChevronDown, ChevronUp, X, History, Layers, CheckSquare, Square, 
-  Upload, Download, ArrowLeft
+  Upload, Download, ArrowLeft, Image as ImageIcon, Star, Trash, Lock,
+  Package, Plus, TrendingUp, Layers, Sparkles, ChevronDown, ChevronUp,
+  X, Search, CheckSquare, Square, Eye, EyeOff, History, Edit3, Trash2
 } from 'lucide-react';
 
 interface WarehouseProduct {
@@ -32,6 +32,8 @@ interface WarehouseProduct {
   height: number;
   depth: number;
   is_packaging: number;
+  gallery: { id: number; url: string; is_primary: boolean }[];
+  primary_image: string | null;
 }
 
 interface Movement {
@@ -73,6 +75,7 @@ const WarehousePage: React.FC = () => {
   const [aiSuggestion, setAiSuggestion] = useState<{ product: WarehouseProduct, recommendation: any } | null>(null);
   const [movementsData, setMovementsData] = useState<Movement[]>([]);
   const [chartData, setChartData] = useState<{category: string, value: number}[]>([]);
+  const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
 
   const fetchProducts = async () => {
     try {
@@ -106,14 +109,17 @@ const WarehousePage: React.FC = () => {
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post('/api/warehouse/products', newProduct);
-      setShowAddModal(false);
+      const res = await axios.post('/api/warehouse/products', newProduct);
+      // Reset new product template
       setNewProduct({ 
         sku: '', name: '', category: '', purchase_price: 0, 
         selling_price: 0, quantity: 0, reorder_point: 3,
         location: '', width: 0, height: 0, depth: 0, is_packaging: 0
       });
       fetchProducts();
+      // Automatically switch to Edit mode for the new product to allow image uploads
+      setEditingProduct(res.data);
+      setShowAddModal(false);
     } catch (err: any) { alert(err.response?.data?.detail || "Errore inserimento"); }
   };
 
@@ -203,6 +209,32 @@ const WarehousePage: React.FC = () => {
     totalPurchase: products.reduce((a,p) => a + (p.purchase_price * p.quantity), 0),
     available: products.filter(p => p.quantity > 0).length
   }), [products]);
+
+  const handleImageUpload = async (productId: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      await axios.post(`/api/warehouse/products/${productId}/images`, formData);
+      fetchProducts();
+    } catch (err) { alert("Errore caricamento immagine"); }
+  };
+
+  const deleteImage = async (imageId: number) => {
+    if(!confirm("Eliminare questa immagine?")) return;
+    try {
+      await axios.delete(`/api/warehouse/images/${imageId}`);
+      fetchProducts();
+    } catch (err) { alert("Errore eliminazione immagine"); }
+  };
+
+  const setPrimary = async (imageId: number) => {
+    try {
+      await axios.patch(`/api/warehouse/images/${imageId}/primary`);
+      fetchProducts();
+    } catch (err) { alert("Errore impostazione immagine principale"); }
+  };
 
   return (
     <div className="p-6 space-y-6 relative z-10 font-sans text-slate-200">
@@ -355,11 +387,27 @@ const WarehousePage: React.FC = () => {
                      </button>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm font-bold text-white">
-                      {p.name}
-                      {p.is_packaging === 1 && <span className="ml-2 text-[8px] bg-purple-500/20 text-purple-400 px-1 rounded">PACK</span>}
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden flex-shrink-0 flex items-center justify-center cursor-pointer hover:border-cyan-500/50 transition-all group"
+                        onClick={() => setEditingProduct(p)}
+                        title="Apri Galleria"
+                      >
+                        {p.primary_image ? (
+                          <img src={p.primary_image} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                        ) : (
+                          <ImageIcon className="w-4 h-4 text-slate-600 group-hover:text-cyan-500" />
+                        )}
+                      </div>
+
+                      <div>
+                        <div className="text-sm font-bold text-white">
+                          {p.name}
+                          {p.is_packaging === 1 && <span className="ml-2 text-[8px] bg-purple-500/20 text-purple-400 px-1 rounded">PACK</span>}
+                        </div>
+                        <div className="text-[10px] text-slate-500 font-mono text-left">{p.sku}</div>
+                      </div>
                     </div>
-                    <div className="text-[10px] text-slate-500 font-mono">{p.sku}</div>
                   </td>
                   <td className="px-6 py-4 text-center">
                     <div className="text-xs font-mono text-cyan-500 bg-cyan-500/5 px-2 py-1 rounded inline-block border border-cyan-500/10">
@@ -493,72 +541,125 @@ const WarehousePage: React.FC = () => {
 
       {(showAddModal || editingProduct) && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-sm p-8 shadow-2xl relative">
-             <button onClick={() => { setShowAddModal(false); setEditingProduct(null); }} className="absolute top-6 right-6 text-slate-500 hover:text-white"><X /></button>
-             <h2 className="text-xl font-bold mb-6 text-white flex items-center gap-3">
-               {editingProduct ? <Edit3 className="text-cyan-400" /> : <Plus className="text-cyan-400" />}
-               {editingProduct ? `Modifica ${editingProduct.sku}` : "Nuovo Articolo"}
-             </h2>
-             <form onSubmit={editingProduct ? handleEditSave : handleAddProduct} className="space-y-4">
-                {!editingProduct && <input type="text" placeholder="SKU (Codice Univoco)" required className="w-full bg-slate-800 p-3 rounded-xl outline-none border border-slate-700 text-sm text-white" value={newProduct.sku} onChange={e => setNewProduct({...newProduct, sku: e.target.value})} />}
-                <input type="text" placeholder="Nome Prodotto" required className="w-full bg-slate-800 p-3 rounded-xl outline-none border border-slate-700 text-sm text-white" value={editingProduct ? editingProduct.name : newProduct.name} onChange={e => editingProduct ? setEditingProduct({...editingProduct, name: e.target.value}) : setNewProduct({...newProduct, name: e.target.value})} />
-                <input type="text" placeholder="Categoria" required className="w-full bg-slate-800 p-3 rounded-xl outline-none border border-slate-700 text-sm text-white" value={editingProduct ? editingProduct.category : newProduct.category} onChange={e => editingProduct ? setEditingProduct({...editingProduct, category: e.target.value}) : setNewProduct({...newProduct, category: e.target.value})} />
-                <div className="grid grid-cols-2 gap-4">
-                   <div className="space-y-1">
-                      <label className="text-[10px] text-slate-500 font-bold uppercase">Acquisto (€)</label>
-                      <input type="number" step="0.01" className="w-full bg-slate-800 p-3 rounded-xl outline-none text-sm text-white border border-slate-700" value={editingProduct ? editingProduct.purchase_price : newProduct.purchase_price} onChange={e => editingProduct ? setEditingProduct({...editingProduct, purchase_price: parseFloat(e.target.value)}) : setNewProduct({...newProduct, purchase_price: parseFloat(e.target.value)})} />
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-2xl flex flex-col md:flex-row shadow-2xl relative overflow-hidden h-[90vh] md:h-auto max-h-[90vh]">
+             <button onClick={() => { setShowAddModal(false); setEditingProduct(null); }} className="absolute top-6 right-6 text-slate-500 hover:text-white z-10"><X /></button>
+             
+             {/* Left side: Images (only for editing) */}
+             {editingProduct && (
+               <div className="w-full md:w-80 bg-slate-950 border-r border-slate-800 p-6 flex flex-col overflow-y-auto">
+                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                   <ImageIcon className="w-4 h-4 text-cyan-400" /> Galleria Foto
+                 </h3>
+                 
+                 <div className="grid grid-cols-2 gap-3 mb-6">
+                    {editingProduct.gallery?.map(img => (
+                      <div key={img.id} className="group relative aspect-square rounded-xl overflow-hidden border border-slate-800 bg-slate-900 shadow-inner">
+                        <img src={img.url} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                          <button type="button" onClick={() => setFullScreenImage(img.url)} className="p-1.5 rounded-lg text-cyan-400 bg-cyan-400/10" title="Apri a schermo intero">
+                            <Search className="w-4 h-4" />
+                          </button>
+                          <div className="flex gap-2">
+                            <button type="button" onClick={() => setPrimary(img.id)} className={`p-1.5 rounded-lg ${img.is_primary ? 'text-yellow-400 bg-yellow-400/10' : 'text-white bg-white/10'}`} title="Imposta come principale">
+                              <Star className="w-3 h-3" fill={img.is_primary ? "currentColor" : "none"} />
+                            </button>
+                            <button type="button" onClick={() => deleteImage(img.id)} className="p-1.5 rounded-lg text-red-400 bg-red-400/10" title="Elimina immagine">
+                              <Trash className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                        {img.is_primary && <div className="absolute top-1 left-1 bg-yellow-500 text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg text-black uppercase">Cover</div>}
+                      </div>
+                    ))}
+                    <label className="aspect-square border-2 border-dashed border-slate-800 rounded-xl flex flex-col items-center justify-center gap-2 hover:border-cyan-500/50 hover:bg-cyan-500/5 transition-all cursor-pointer text-slate-600 hover:text-cyan-400">
+                      <Plus className="w-5 h-5" />
+                      <span className="text-[10px] font-bold">Aggiungi</span>
+                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(editingProduct.id, e)} />
+                    </label>
+                 </div>
+                 <div className="mt-auto p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
+                    <p className="text-[10px] text-emerald-400 font-bold mb-2 uppercase flex items-center gap-2"><Sparkles className="w-3 h-3" /> Info Automazione</p>
+                    <p className="text-[10px] text-slate-400 leading-relaxed italic">La foto contrassegnata come <b>Cover</b> verrà inviata automaticamente nelle email CRM.</p>
+                 </div>
+               </div>
+             )}
+
+             <div className="flex-grow p-8 overflow-y-auto">
+               <h2 className="text-xl font-bold mb-6 text-white flex items-center gap-3">
+                 {editingProduct ? <Edit3 className="text-cyan-400" /> : <Plus className="text-cyan-400" />}
+                 {editingProduct ? `Modifica ${editingProduct.sku}` : "Nuovo Articolo"}
+               </h2>
+               <form onSubmit={editingProduct ? handleEditSave : handleAddProduct} className="space-y-4">
+                  {!editingProduct && <input type="text" placeholder="SKU (Codice Univoco)" required className="w-full bg-slate-800 p-3 rounded-xl outline-none border border-slate-700 text-sm text-white" value={newProduct.sku} onChange={e => setNewProduct({...newProduct, sku: e.target.value})} />}
+                  <input type="text" placeholder="Nome Prodotto" required className="w-full bg-slate-800 p-3 rounded-xl outline-none border border-slate-700 text-sm text-white" value={editingProduct ? editingProduct.name : newProduct.name} onChange={e => editingProduct ? setEditingProduct({...editingProduct, name: e.target.value}) : setNewProduct({...newProduct, name: e.target.value})} />
+                  <input type="text" placeholder="Categoria" required className="w-full bg-slate-800 p-3 rounded-xl outline-none border border-slate-700 text-sm text-white" value={editingProduct ? editingProduct.category : newProduct.category} onChange={e => editingProduct ? setEditingProduct({...editingProduct, category: e.target.value}) : setNewProduct({...newProduct, category: e.target.value})} />
+                  <div className="grid grid-cols-2 gap-4">
+                     <div className="space-y-1">
+                        <label className="text-[10px] text-slate-500 font-bold uppercase">Acquisto (€)</label>
+                        <input type="number" step="0.01" className="w-full bg-slate-800 p-3 rounded-xl outline-none text-sm text-white border border-slate-700" value={editingProduct ? editingProduct.purchase_price : newProduct.purchase_price} onChange={e => editingProduct ? setEditingProduct({...editingProduct, purchase_price: parseFloat(e.target.value)}) : setNewProduct({...newProduct, purchase_price: parseFloat(e.target.value)})} />
+                     </div>
+                     <div className="space-y-1">
+                        <label className="text-[10px] text-slate-500 font-bold uppercase">Vendita (€)</label>
+                        <input type="number" step="0.01" className="w-full bg-slate-800 p-3 rounded-xl outline-none text-sm text-white border border-slate-700" value={editingProduct ? editingProduct.selling_price : newProduct.selling_price} onChange={e => editingProduct ? setEditingProduct({...editingProduct, selling_price: parseFloat(e.target.value)}) : setNewProduct({...newProduct, selling_price: parseFloat(e.target.value)})} />
+                     </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                     <div className="space-y-1">
+                        <label className="text-[10px] text-slate-500 font-bold uppercase">Quantità</label>
+                        <input type="number" className="w-full bg-slate-800 p-3 rounded-xl outline-none text-sm text-white border border-slate-700" value={editingProduct ? editingProduct.quantity : newProduct.quantity} onChange={e => editingProduct ? setEditingProduct({...editingProduct, quantity: parseInt(e.target.value)}) : setNewProduct({...newProduct, quantity: parseInt(e.target.value)})} />
+                     </div>
+                     <div className="space-y-1">
+                        <label className="text-[10px] text-slate-500 font-bold uppercase">Min Stock</label>
+                        <input type="number" className="w-full bg-slate-800 p-3 rounded-xl outline-none text-sm text-white border border-slate-700" value={editingProduct ? editingProduct.reorder_point : newProduct.reorder_point} onChange={e => editingProduct ? setEditingProduct({...editingProduct, reorder_point: parseInt(e.target.value)}) : setNewProduct({...newProduct, reorder_point: parseInt(e.target.value)})} />
+                     </div>
                    </div>
                    <div className="space-y-1">
-                      <label className="text-[10px] text-slate-500 font-bold uppercase">Vendita (€)</label>
-                      <input type="number" step="0.01" className="w-full bg-slate-800 p-3 rounded-xl outline-none text-sm text-white border border-slate-700" value={editingProduct ? editingProduct.selling_price : newProduct.selling_price} onChange={e => editingProduct ? setEditingProduct({...editingProduct, selling_price: parseFloat(e.target.value)}) : setNewProduct({...newProduct, selling_price: parseFloat(e.target.value)})} />
+                      <label className="text-[10px] text-slate-500 font-bold uppercase">Posizione Scaffale</label>
+                      <input type="text" placeholder="Es: A-12-3" className="w-full bg-slate-800 p-3 rounded-xl outline-none text-sm text-white border border-slate-700" value={editingProduct ? editingProduct.location : newProduct.location} onChange={e => editingProduct ? setEditingProduct({...editingProduct, location: e.target.value}) : setNewProduct({...newProduct, location: e.target.value})} />
                    </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                   <div className="space-y-1">
-                      <label className="text-[10px] text-slate-500 font-bold uppercase">Quantità</label>
-                      <input type="number" className="w-full bg-slate-800 p-3 rounded-xl outline-none text-sm text-white border border-slate-700" value={editingProduct ? editingProduct.quantity : newProduct.quantity} onChange={e => editingProduct ? setEditingProduct({...editingProduct, quantity: parseInt(e.target.value)}) : setNewProduct({...newProduct, quantity: parseInt(e.target.value)})} />
+                   <div className="grid grid-cols-3 gap-3">
+                      <div className="space-y-1">
+                         <label className="text-[10px] text-slate-500 font-bold uppercase">Larg. (cm)</label>
+                         <input type="number" step="0.1" className="w-full bg-slate-800 p-2 rounded-xl outline-none text-sm text-white border border-slate-700" value={editingProduct ? editingProduct.width : newProduct.width} onChange={e => editingProduct ? setEditingProduct({...editingProduct, width: parseFloat(e.target.value)}) : setNewProduct({...newProduct, width: parseFloat(e.target.value)})} />
+                      </div>
+                      <div className="space-y-1">
+                         <label className="text-[10px] text-slate-500 font-bold uppercase">Alt. (cm)</label>
+                         <input type="number" step="0.1" className="w-full bg-slate-800 p-2 rounded-xl outline-none text-sm text-white border border-slate-700" value={editingProduct ? editingProduct.height : newProduct.height} onChange={e => editingProduct ? setEditingProduct({...editingProduct, height: parseFloat(e.target.value)}) : setNewProduct({...newProduct, height: parseFloat(e.target.value)})} />
+                      </div>
+                      <div className="space-y-1">
+                         <label className="text-[10px] text-slate-500 font-bold uppercase">Prof. (cm)</label>
+                         <input type="number" step="0.1" className="w-full bg-slate-800 p-2 rounded-xl outline-none text-sm text-white border border-slate-700" value={editingProduct ? editingProduct.depth : newProduct.depth} onChange={e => editingProduct ? setEditingProduct({...editingProduct, depth: parseFloat(e.target.value)}) : setNewProduct({...newProduct, depth: parseFloat(e.target.value)})} />
+                      </div>
                    </div>
-                   <div className="space-y-1">
-                      <label className="text-[10px] text-slate-500 font-bold uppercase">Min Stock</label>
-                      <input type="number" className="w-full bg-slate-800 p-3 rounded-xl outline-none text-sm text-white border border-slate-700" value={editingProduct ? editingProduct.reorder_point : newProduct.reorder_point} onChange={e => editingProduct ? setEditingProduct({...editingProduct, reorder_point: parseInt(e.target.value)}) : setNewProduct({...newProduct, reorder_point: parseInt(e.target.value)})} />
+                   <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700">
+                      <div className="flex items-center gap-2">
+                         <Package className={`w-4 h-4 ${(editingProduct ? editingProduct.is_packaging : newProduct.is_packaging) ? 'text-purple-400' : 'text-slate-500'}`} />
+                         <span className="text-xs font-bold text-slate-300 uppercase">Articolo di Imballaggio</span>
+                      </div>
+                      <button 
+                         type="button" 
+                         onClick={() => editingProduct ? setEditingProduct({...editingProduct, is_packaging: editingProduct.is_packaging ? 0 : 1}) : setNewProduct({...newProduct, is_packaging: newProduct.is_packaging ? 0 : 1})}
+                         className={`w-10 h-5 rounded-full relative transition-colors ${ (editingProduct ? editingProduct.is_packaging : newProduct.is_packaging) ? 'bg-purple-600' : 'bg-slate-700' }`}
+                      >
+                         <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${ (editingProduct ? editingProduct.is_packaging : newProduct.is_packaging) ? 'left-6' : 'left-1' }`} />
+                      </button>
                    </div>
-                 </div>
-                 <div className="space-y-1">
-                    <label className="text-[10px] text-slate-500 font-bold uppercase">Posizione Scaffale</label>
-                    <input type="text" placeholder="Es: A-12-3" className="w-full bg-slate-800 p-3 rounded-xl outline-none text-sm text-white border border-slate-700" value={editingProduct ? editingProduct.location : newProduct.location} onChange={e => editingProduct ? setEditingProduct({...editingProduct, location: e.target.value}) : setNewProduct({...newProduct, location: e.target.value})} />
-                 </div>
-                 <div className="grid grid-cols-3 gap-3">
-                    <div className="space-y-1">
-                       <label className="text-[10px] text-slate-500 font-bold uppercase">Larg. (cm)</label>
-                       <input type="number" step="0.1" className="w-full bg-slate-800 p-2 rounded-xl outline-none text-sm text-white border border-slate-700" value={editingProduct ? editingProduct.width : newProduct.width} onChange={e => editingProduct ? setEditingProduct({...editingProduct, width: parseFloat(e.target.value)}) : setNewProduct({...newProduct, width: parseFloat(e.target.value)})} />
-                    </div>
-                    <div className="space-y-1">
-                       <label className="text-[10px] text-slate-500 font-bold uppercase">Alt. (cm)</label>
-                       <input type="number" step="0.1" className="w-full bg-slate-800 p-2 rounded-xl outline-none text-sm text-white border border-slate-700" value={editingProduct ? editingProduct.height : newProduct.height} onChange={e => editingProduct ? setEditingProduct({...editingProduct, height: parseFloat(e.target.value)}) : setNewProduct({...newProduct, height: parseFloat(e.target.value)})} />
-                    </div>
-                    <div className="space-y-1">
-                       <label className="text-[10px] text-slate-500 font-bold uppercase">Prof. (cm)</label>
-                       <input type="number" step="0.1" className="w-full bg-slate-800 p-2 rounded-xl outline-none text-sm text-white border border-slate-700" value={editingProduct ? editingProduct.depth : newProduct.depth} onChange={e => editingProduct ? setEditingProduct({...editingProduct, depth: parseFloat(e.target.value)}) : setNewProduct({...newProduct, depth: parseFloat(e.target.value)})} />
-                    </div>
-                 </div>
-                 <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700">
-                    <div className="flex items-center gap-2">
-                       <Package className={`w-4 h-4 ${(editingProduct ? editingProduct.is_packaging : newProduct.is_packaging) ? 'text-purple-400' : 'text-slate-500'}`} />
-                       <span className="text-xs font-bold text-slate-300 uppercase">Articolo di Imballaggio</span>
-                    </div>
-                    <button 
-                       type="button" 
-                       onClick={() => editingProduct ? setEditingProduct({...editingProduct, is_packaging: editingProduct.is_packaging ? 0 : 1}) : setNewProduct({...newProduct, is_packaging: newProduct.is_packaging ? 0 : 1})}
-                       className={`w-10 h-5 rounded-full relative transition-colors ${ (editingProduct ? editingProduct.is_packaging : newProduct.is_packaging) ? 'bg-purple-600' : 'bg-slate-700' }`}
-                    >
-                       <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${ (editingProduct ? editingProduct.is_packaging : newProduct.is_packaging) ? 'left-6' : 'left-1' }`} />
-                    </button>
-                 </div>
-                 <button type="submit" className="w-full bg-cyan-600 font-bold py-3 mt-4 rounded-xl text-white shadow-lg shadow-cyan-900/30">
-                  {editingProduct ? "Salva Modifiche" : "Crea Prodotto"}
-                </button>
-             </form>
-          </div>
+                   <button type="submit" className="w-full bg-cyan-600 font-bold py-3 mt-4 rounded-xl text-white shadow-lg shadow-cyan-900/30">
+                    {editingProduct ? "Salva Modifiche" : "Crea Prodotto"}
+                  </button>
+                </form>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* Fullscreen Image Modal */}
+      {fullScreenImage && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setFullScreenImage(null)}>
+          <button className="absolute top-6 right-6 text-slate-400 hover:text-white p-2 rounded-full bg-slate-800/50 hover:bg-slate-700 transition" onClick={() => setFullScreenImage(null)}>
+            <X className="w-8 h-8" />
+          </button>
+          <img src={fullScreenImage} alt="Fullscreen" className="max-w-[90vw] max-h-[90vh] object-contain rounded-xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
     </div>

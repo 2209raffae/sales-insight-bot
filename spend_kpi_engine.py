@@ -1,4 +1,4 @@
-﻿"""
+"""
 Campaign Spend KPI Engine - deterministic, period-aware.
 
 mode = "imported" -> only campaign_spends
@@ -99,18 +99,28 @@ def kpi_cpl_by_source(db: Session, start: str | None = None, end: str | None = N
         leads_by.columns = ["source", "leads_count"]
         spend_by = spend_by.merge(leads_by, on="source", how="left")
         spend_by["leads_count"] = spend_by["leads_count"].fillna(0).astype(int)
-        spend_by["cpl"] = spend_by.apply(
-            lambda r: round(float(r["total_spend"]) / int(r["leads_count"]), 2) if int(r["leads_count"]) > 0 else None,
-            axis=1,
-        )
+        
+        def calc_cpl(row):
+            l_cnt = int(row["leads_count"])
+            if l_cnt > 0:
+                val = float(row["total_spend"]) / l_cnt
+                import math
+                return round(val, 2) if not math.isnan(val) else None
+            return None
+
+        spend_by["cpl"] = spend_by.apply(calc_cpl, axis=1)
     else:
         spend_by["leads_count"] = 0
         spend_by["cpl"] = None
 
+    # Handle any remaining NaNs across the dataframe before converting to dict
+    import numpy as np
+    results = spend_by.sort_values("total_spend", ascending=False).replace({np.nan: None}).to_dict(orient="records")
+
     return {
         "period": {"start": start, "end": end},
         "mode": mode,
-        "cpl_by_source": spend_by.sort_values("total_spend", ascending=False).to_dict(orient="records"),
+        "cpl_by_source": results,
     }
 
 def kpi_cost_per_winning(db: Session, start: str | None = None, end: str | None = None, winning_statuses: set[str] | None = None, mode: str = "both") -> dict:
@@ -145,16 +155,25 @@ def kpi_cost_per_winning(db: Session, start: str | None = None, end: str | None 
         spend_by["winning_leads"] = 0
 
     spend_by["winning_leads"] = spend_by["winning_leads"].fillna(0).astype(int)
-    spend_by["cost_per_winning"] = spend_by.apply(
-        lambda r: round(float(r["total_spend"]) / int(r["winning_leads"]), 2) if int(r["winning_leads"]) > 0 else None,
-        axis=1,
-    )
+    
+    def calc_cpw(row):
+        w_cnt = int(row["winning_leads"])
+        if w_cnt > 0:
+            val = float(row["total_spend"]) / w_cnt
+            import math
+            return round(val, 2) if not math.isnan(val) else None
+        return None
+
+    spend_by["cost_per_winning"] = spend_by.apply(calc_cpw, axis=1)
+
+    import numpy as np
+    results = spend_by.sort_values("total_spend", ascending=False).replace({np.nan: None}).to_dict(orient="records")
 
     return {
         "period": {"start": start, "end": end},
         "winning_statuses": list(winning_statuses),
         "mode": mode,
-        "cost_per_winning_by_source": spend_by.sort_values("total_spend", ascending=False).to_dict(orient="records"),
+        "cost_per_winning_by_source": results,
     }
 
 def kpi_overspending_alerts(db: Session, start: str | None = None, end: str | None = None, winning_statuses: set[str] | None = None, min_spend_threshold: float = 0.0, mode: str = "both") -> dict:

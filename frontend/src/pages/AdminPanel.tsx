@@ -4,12 +4,26 @@ import { Shield, Trash2, Save, ChevronDown, ChevronUp, AlertTriangle } from 'luc
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 
-const AGENTS = [
-    { slug: 'sales-insight', label: 'Sales Insight', color: 'neon-blue' },
-    { slug: 'hr-copilot', label: 'HR Copilot', color: 'neon-pink' },
-    { slug: 'competitor-radar', label: 'Competitor Radar', color: 'neon-amber' },
-    { slug: 'task-force', label: 'Task Force', color: 'neon-green' },
-];
+import { NEXUS_AGENTS } from '../config/agents';
+
+// Derive a dynamic list of agents from App.tsx so any new agent is automatically included
+const AGENTS = NEXUS_AGENTS.filter(a => a.slug).map(a => {
+    // Map the hex accent back to our neon tailwind classes or fallback to neon-blue
+    let colorName = 'neon-blue';
+    if (a.accent === '#a855f7') colorName = 'neon-pink'; // using pink/purple mix
+    if (a.accent === '#f59e0b') colorName = 'neon-amber';
+    if (a.accent === '#10b981') colorName = 'neon-green';
+    if (a.accent === '#00ffcc') colorName = 'neon-cyan'; // or just green/blue
+    if (a.accent === '#6366f1') colorName = 'neon-indigo';
+    if (a.accent === '#f43f5e') colorName = 'neon-red';
+    
+    return {
+        slug: a.slug as string,
+        label: a.label,
+        color: colorName,
+        accentHex: a.accent
+    };
+});
 
 interface UserData {
     id: number;
@@ -320,9 +334,15 @@ const AdminPanel = () => {
                                                                     <button
                                                                         key={a.slug}
                                                                         onClick={() => toggleAgent(u.id, a.slug)}
-                                                                        className={`p-2 rounded-lg border text-[11px] font-bold transition-all text-center ${hasAccess
-                                                                            ? `bg-${a.color}/10 border-${a.color}/40 text-${a.color} shadow-[0_0_10px_rgba(255,255,255,0.05)]`
-                                                                            : 'bg-black/30 border-white/5 text-slate-500 hover:border-white/20'
+                                                                        style={hasAccess ? {
+                                                                            backgroundColor: `${a.accentHex}1a`,
+                                                                            borderColor: `${a.accentHex}66`,
+                                                                            color: a.accentHex,
+                                                                            boxShadow: `0 0 10px ${a.accentHex}1a`
+                                                                        } : {}}
+                                                                        className={`p-2 rounded-lg border text-[11px] font-bold transition-all text-center ${!hasAccess
+                                                                            ? 'bg-black/30 border-white/5 text-slate-500 hover:border-white/20'
+                                                                            : ''
                                                                             }`}
                                                                     >
                                                                         {a.label}

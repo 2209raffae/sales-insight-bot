@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import StreamingResponse
+import os
 from sqlalchemy.orm import Session
 from typing import List, Dict, Optional
 import json
@@ -8,10 +9,12 @@ import io
 from datetime import datetime
 
 from database import get_db
-from models import WarehouseProduct, LeadRecord, UserProfile, WarehouseMovement
+from models import WarehouseProduct, LeadRecord, UserProfile, WarehouseMovement, WarehouseProductImage
 from routers.auth import get_current_user
 from pydantic import BaseModel
 import warehouse_ai_layer
+from supabase_service import upload_product_image
+import uuid
 
 router = APIRouter(prefix="/api/warehouse", tags=["Warehouse Intelligence"])
 
@@ -101,10 +104,13 @@ def _serialize_product(p: WarehouseProduct) -> dict:
         "is_low_stock": 0 < p.quantity <= (p.reorder_point or 3),
         "updated_at": p.updated_at.isoformat() if p.updated_at else None,
         "location": p.location,
-        "width": p.width or 0.0,
-        "height": p.height or 0.0,
         "depth": p.depth or 0.0,
         "is_packaging": p.is_packaging or 0,
+        "gallery": [
+            {"id": img.id, "url": img.url, "is_primary": bool(img.is_primary)} 
+            for img in p.images
+        ],
+        "primary_image": next((img.url for img in p.images if img.is_primary), None)
     }
 
 # ── ROUTES ────────────────────────────────────────────────────────────
@@ -304,3 +310,71 @@ async def get_chart_stats(db: Session = Depends(get_db)):
     return [
         {"category": k, "value": round(v, 2)} for k, v in cat_data.items()
     ]
+
+# ── IMAGE MANAGEMENT ──────────────────────────────────────────────────
+
+@router.post("/products/{product_id}/images")
+async def add_product_image(
+    product_id: int, 
+    file: UploadFile = File(...), 
+    db: Session = Depends(get_db), 
+    user: UserProfile = Depends(get_current_user)
+):
+    product = db.query(WarehouseProduct).filter(WarehouseProduct.id == product_id).first()
+    if not product: raise HTTPException(status_code=404)
+
+    # 1. Upload to Supabase
+    ext = os.path.splitext(file.filename)[1].lower()
+    fname = f"prod_{product_id}_{uuid.uuid4()}{ext}"
+    content = await file.read()
+    
+    url = await upload_product_image(content, fname, file.content_type)
+    if not url:
+        raise HTTPException(status_code=500, detail="Errore durante l'upload su Supabase.")
+
+    # 2. Save Reference in DB
+    # If it's the first image, make it primary
+    is_first = db.query(WarehouseProductImage).filter(WarehouseProductImage.product_id == product_id).count() == 0
+    
+    new_img = WarehouseProductImage(
+        product_id=product_id,
+        url=url,
+        is_primary=1 if is_first else 0
+    )
+    db.add(new_img)
+    db.commit()
+    db.refresh(new_img)
+    
+    return {"id": new_img.id, "url": new_img.url, "is_primary": bool(new_img.is_primary)}
+
+@router.delete("/images/{image_id}")
+async def delete_product_image(image_id: int, db: Session = Depends(get_db), user: UserProfile = Depends(get_current_user)):
+    img = db.query(WarehouseProductImage).filter(WarehouseProductImage.id == image_id).first()
+    if not img: raise HTTPException(status_code=404)
+    
+    # Check if delete was primary, set another one as primary if exists
+    is_primary = img.is_primary == 1
+    p_id = img.product_id
+    
+    db.delete(img)
+    db.commit()
+    
+    if is_primary:
+        next_img = db.query(WarehouseProductImage).filter(WarehouseProductImage.product_id == p_id).first()
+        if next_img:
+            next_img.is_primary = 1
+            db.commit()
+            
+    return {"message": "Immagine eliminata."}
+
+@router.patch("/images/{image_id}/primary")
+async def set_primary_image(image_id: int, db: Session = Depends(get_db), user: UserProfile = Depends(get_current_user)):
+    img = db.query(WarehouseProductImage).filter(WarehouseProductImage.id == image_id).first()
+    if not img: raise HTTPException(status_code=404)
+    
+    # Unset other primaries
+    db.query(WarehouseProductImage).filter(WarehouseProductImage.product_id == img.product_id).update({"is_primary": 0})
+    img.is_primary = 1
+    db.commit()
+    
+    return {"message": "Immagine impostata come principale."}

@@ -11,6 +11,7 @@ from pydantic import BaseModel
 import logistics_ai_layer
 from picking_utils import calculate_ideal_packaging, sequence_orders
 import uuid
+from routers.crm import process_order_automations
 
 router = APIRouter(prefix="/api/logistics", tags=["Logistics & Order Hub"])
 
@@ -316,6 +317,9 @@ async def create_order(
 
     # Trigger AI analysis in background for this new order
     background_tasks.add_task(_run_ai_analysis_for_new_orders, db)
+    
+    # NEW: Trigger CRM Automations engine
+    background_tasks.add_task(process_order_automations, db, new_order.id)
 
     return _serialize_order(new_order)
 

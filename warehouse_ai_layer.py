@@ -9,7 +9,7 @@ client = AsyncOpenAI(
     base_url="https://api.groq.com/openai/v1"
 )
 
-MODEL = "llama-3.3-70b-versatile"
+MODEL = "llama-3.1-8b-instant"
 
 # ── Shared store config (can be overridden per-call) ─────────────────────────
 DEFAULT_TARGET_MARGIN = 0.25  # 25% target margin

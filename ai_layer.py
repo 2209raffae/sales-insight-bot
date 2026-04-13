@@ -62,7 +62,7 @@ def explain_kpis(
     Send computed KPI data to the LLM and return a natural language explanation.
     """
     client = _get_client()
-    model = model or os.getenv("MODEL", "llama-3.1-8b-instant")
+    model = model or "llama-3.1-8b-instant"
 
     context = f"""
 Domanda utente: {user_question}
@@ -99,7 +99,7 @@ def forecast_trend(
     Send monthly trend data to the LLM to forecast the next month.
     """
     client = _get_client()
-    model = model or os.getenv("MODEL", "llama-3.1-8b-instant")
+    model = model or "llama-3.1-8b-instant"
 
     context = f"""
 Ecco i dati storici del trend mensile (Spesa totale, Numero di Lead, CPL medio):
@@ -144,7 +144,7 @@ def match_problem_to_expertise(
     returns a list of IDs of categories that match the problem.
     """
     client = _get_client()
-    model = model or os.getenv("MODEL", "llama-3.1-8b-instant")
+    model = model or "llama-3.1-8b-instant"
 
     # categories is list of {"id": int, "name": str}
     categories_str = "\n".join([f"- {c['id']}: {c['name']}" for c in categories])
@@ -202,7 +202,7 @@ def generate_sitrep(
     Generates a Situation Report (SITREP) based on the latest 50 updates and the current task list.
     """
     client = _get_client()
-    model = model or os.getenv("MODEL", "llama-3.1-8b-instant")
+    model = model or "llama-3.1-8b-instant"
 
     # Format context for AI
     updates_str = "\n".join([f"- [{u['created_at']}] {u['author_name']}: {u['content'][:200]}" for u in updates])
@@ -253,7 +253,7 @@ def generate_crm_email(
     Generates a personalized marketing email in HTML format.
     """
     client = _get_client()
-    model = model or os.getenv("MODEL", "llama-3.1-8b-instant")
+    model = model or "llama-3.1-8b-instant"
 
     system = f"""Sei un copywriter esperto di Email Marketing. 
 Il tuo obiettivo e scrivere un'email HTML formattata bene basandoti sul prompt dell'utente.

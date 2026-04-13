@@ -61,9 +61,14 @@ def kpi_leads_by_status(db: Session) -> dict:
         .sort_values("count", ascending=False)
     )
     groups["pct"] = groups["count"].apply(lambda c: _pct(c, total))
+
+    # Convert NaNs to None for JSON
+    import numpy as np
+    data = groups.replace({np.nan: None}).to_dict(orient="records")
+
     return {
         "total_leads": total,
-        "leads_by_status": groups.to_dict(orient="records"),
+        "leads_by_status": data,
     }
 
 
@@ -86,9 +91,13 @@ def kpi_leads_by_source(db: Session, top_n: int = 10) -> dict:
         .head(top_n)
     )
     groups["pct"] = groups["count"].apply(lambda c: _pct(c, total))
+
+    import numpy as np
+    data = groups.replace({np.nan: None}).to_dict(orient="records")
+
     return {
         "total_leads": total,
-        "leads_by_source": groups.to_dict(orient="records"),
+        "leads_by_source": data,
     }
 
 
@@ -108,12 +117,17 @@ def kpi_leads_aging(db: Session) -> dict:
         return {"aging_summary": {}, "aging_buckets": []}
 
     total = len(df)
+    def clean_val(v):
+        import math
+        val = float(v)
+        return round(val, 1) if not math.isnan(val) else 0.0
+
     summary = {
         "total_leads": total,
-        "avg_age_days": round(float(df["age_days"].mean()), 1),
-        "median_age_days": round(float(df["age_days"].median()), 1),
-        "max_age_days": round(float(df["age_days"].max()), 1),
-        "min_age_days": round(float(df["age_days"].min()), 1),
+        "avg_age_days": clean_val(df["age_days"].mean()),
+        "median_age_days": clean_val(df["age_days"].median()),
+        "max_age_days": clean_val(df["age_days"].max()),
+        "min_age_days": clean_val(df["age_days"].min()),
     }
 
     buckets = []

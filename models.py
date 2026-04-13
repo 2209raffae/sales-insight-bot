@@ -288,6 +288,18 @@ class WarehouseMovement(Base):
 
     product = relationship("WarehouseProduct", backref="movements")
 
+class WarehouseProductImage(Base):
+    """Gallery images for warehouse products."""
+    __tablename__ = "warehouse_product_images"
+
+    id         = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("warehouse_products.id", ondelete="CASCADE"), nullable=False, index=True)
+    url        = Column(String, nullable=False)
+    is_primary = Column(Integer, default=0) # 1=primary, 0=others
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    product = relationship("WarehouseProduct", backref="images")
+
 class WarehouseOrder(Base):
     """
     Manages both Online (from Leads) and Physical In-Store orders.
@@ -385,3 +397,17 @@ class CRMAutomation(Base):
     sent_count    = Column(Integer, default=0)
     status        = Column(String, default="Completato")
     created_at    = Column(DateTime, default=datetime.utcnow)
+
+class CRMEmailRule(Base):
+    """Event-driven automation rules for marketing emails."""
+    __tablename__ = "crm_email_rules"
+
+    id              = Column(Integer, primary_key=True, index=True)
+    name            = Column(String, nullable=False)
+    subject         = Column(String, nullable=True, default="")
+    trigger_event   = Column(String, nullable=False) # e.g., "ORDER_CREATED", "IDLE_1_MONTH"
+    delay_hours     = Column(Integer, default=0)
+    prompt_template     = Column(Text, nullable=False, default="")
+    resend_template_id  = Column(String, nullable=True) # Optional: Resend native Template ID
+    is_active           = Column(Integer, default=1) # 1=active, 0=inactive (sqlite boolean)
+    created_at          = Column(DateTime, default=datetime.utcnow)
