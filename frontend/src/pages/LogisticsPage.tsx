@@ -85,9 +85,21 @@ const LogisticsPage: React.FC = () => {
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
+      console.log('LogisticsPage: Fetching orders...');
       const res = await axios.get('/api/logistics/orders');
-      setOrders(res.data);
-    } catch (err) { console.error(err); } finally { setLoading(false); }
+      console.log('LogisticsPage: Response received:', res.data);
+      if (Array.isArray(res.data)) {
+        setOrders(res.data);
+      } else {
+        console.error('LogisticsPage: Expected array but received:', res.data);
+        setOrders([]);
+      }
+    } catch (err) { 
+      console.error('LogisticsPage: Fetch error:', err); 
+      setOrders([]);
+    } finally { 
+      setLoading(false); 
+    }
   }, []);
 
   useEffect(() => { 
@@ -104,12 +116,18 @@ const LogisticsPage: React.FC = () => {
     if (!hasUnanalyzed) return;
 
     const interval = setInterval(async () => {
-      const res = await axios.get('/api/logistics/orders');
-      setOrders(res.data);
-      const stillPending = res.data.some(
-        (o: Order) => !o.ai_analyzed && (o.status === 'Da Preparare' || o.status === 'In Preparazione')
-      );
-      if (!stillPending) clearInterval(interval);
+      try {
+        const res = await axios.get('/api/logistics/orders');
+        if (Array.isArray(res.data)) {
+          setOrders(res.data);
+          const stillPending = res.data.some(
+            (o: Order) => !o.ai_analyzed && (o.status === 'Da Preparare' || o.status === 'In Preparazione')
+          );
+          if (!stillPending) clearInterval(interval);
+        }
+      } catch (err) {
+        console.error('LogisticsPage: Polling error:', err);
+      }
     }, 4000);
 
     return () => clearInterval(interval);
@@ -146,15 +164,17 @@ const LogisticsPage: React.FC = () => {
   };
 
   const stats = useMemo(() => {
-    const total = orders.length;
-    const pending = orders.filter(o => o.status === 'Da Preparare').length;
-    const delivered = orders.filter(o => ['Completato', 'Consegnato', 'Spedito'].includes(o.status)).length;
-    const unanalyzed = orders.filter(o => !o.ai_analyzed && (o.status === 'Da Preparare' || o.status === 'In Preparazione')).length;
+    const safeOrders = Array.isArray(orders) ? orders : [];
+    const total = safeOrders.length;
+    const pending = safeOrders.filter(o => o.status === 'Da Preparare').length;
+    const delivered = safeOrders.filter(o => ['Completato', 'Consegnato', 'Spedito'].includes(o.status)).length;
+    const unanalyzed = safeOrders.filter(o => !o.ai_analyzed && (o.status === 'Da Preparare' || o.status === 'In Preparazione')).length;
     return { total, pending, delivered, unanalyzed };
   }, [orders]);
 
   const ordersToPrepare = useMemo(() => {
-    return orders
+    const safeOrders = Array.isArray(orders) ? orders : [];
+    return safeOrders
       .filter(o => o.status === 'Da Preparare' || o.status === 'In Preparazione')
       .sort((a, b) => {
         return (a.picking_index ?? 9999) - (b.picking_index ?? 9999);
@@ -162,13 +182,14 @@ const LogisticsPage: React.FC = () => {
   }, [orders]);
 
   const filteredOrders = useMemo(() => {
-    let result = orders;
+    const safeOrders = Array.isArray(orders) ? orders : [];
+    let result = safeOrders;
     
     // Testo di ricerca
     const q = searchQuery.trim().toLowerCase();
     if (q) {
       result = result.filter(o =>
-        o.customer_name.toLowerCase().includes(q) ||
+        (o.customer_name || "").toLowerCase().includes(q) ||
         String(o.id).includes(q) ||
         (o.shipment?.tracking && o.shipment.tracking.toLowerCase().includes(q)) ||
         (o.shipping_address && o.shipping_address.toLowerCase().includes(q))
@@ -181,7 +202,11 @@ const LogisticsPage: React.FC = () => {
     }
     
     // Ordinamento: sempre i più recenti in cima
-    return [...result].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return [...result].sort((a, b) => {
+      const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return dateB - dateA;
+    });
   }, [orders, searchQuery, filterDate]);
 
   return (

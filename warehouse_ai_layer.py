@@ -11,8 +11,8 @@ client = AsyncOpenAI(
 
 MODEL = "llama-3.1-8b-instant"
 
-# ── Shared store config (can be overridden per-call) ─────────────────────────
-DEFAULT_TARGET_MARGIN = 0.25  # 25% target margin
+# ── Configurable Defaults (Can be overridden by Orchestrator) ──────────────
+DEFAULT_TARGET_MARGIN = 0.25 
 
 
 async def generate_product_description(name: str, category: str, metadata: dict) -> str:
@@ -93,17 +93,17 @@ async def suggest_price_optimization(
     days_in_stock: int,
     purchase_price: float = 0.0,
     quantity: int = 0,
-    target_margin: float = DEFAULT_TARGET_MARGIN,
+    config: Optional[Dict] = None,
     category_avg_margin: Optional[float] = None,
 ) -> Dict:
     """
-    Suggests intelligent price adjustments considering:
-    - Days in stock (aging)
-    - Remaining quantity
-    - Purchase price & minimum margin
-    - Store target margin
-    - Category average margin
+    Suggests price adjustments. Now fully config-driven.
     """
+    target_margin = DEFAULT_TARGET_MARGIN
+    if config and "reorder_threshold" in config:
+        # Example: use reorder threshold as a proxy if target_margin not explicit
+        target_margin = config.get("target_margin", DEFAULT_TARGET_MARGIN)
+
     current_margin = ((current_price - purchase_price) / current_price * 100) if current_price > 0 and purchase_price > 0 else None
     min_acceptable_price = purchase_price * 1.05 if purchase_price > 0 else current_price * 0.85  # min 5% above cost
     target_price = purchase_price / (1 - target_margin) if purchase_price > 0 else current_price

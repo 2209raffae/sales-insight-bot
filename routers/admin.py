@@ -2,6 +2,7 @@
 Admin router — CRUD for users and permissions (admin-only).
 """
 from fastapi import APIRouter, Depends, HTTPException
+from datetime import datetime
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional, List
@@ -40,6 +41,11 @@ class UpdateUserRequest(BaseModel):
     is_admin: Optional[int] = None
     password: Optional[str] = None
     expertise_ids: Optional[List[int]] = None
+
+class CompanyOut(BaseModel):
+    id: int
+    name: str
+    description: Optional[str] = None
 
 
 # ── Routes: Users ─────────────────────────────────────────────────────────────
@@ -193,3 +199,84 @@ def delete_category(
     db.delete(cat)
     db.commit()
     return {"detail": "Categoria eliminata"}
+
+
+@router.get("/companies", response_model=List[CompanyOut])
+def list_companies(
+    admin: UserProfile = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """List all companies (admin only)."""
+    from models import Company
+    return db.query(Company).order_by(Company.name.asc()).all()
+
+
+@router.post("/setup-demo", response_model=CompanyOut)
+def create_demo_company(
+    admin: UserProfile = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """Create a fully functional demo company with profile, agents and configs."""
+    from models import Company, CompanyProfile, ActiveAgent, AgentConfiguration
+    
+    # 1. Create Company
+    demo_name = f"Nexus Demo {datetime.now().strftime('%H%M%S')}"
+    company = Company(
+        name=demo_name,
+        description="Azienda dimostrativa per il testing dell'Orchestratore Nexus.",
+        metadata_json={
+            "industry": "Retail",
+            "market": "Italy",
+            "type": "Demo"
+        }
+    )
+    db.add(company)
+    db.commit()
+    db.refresh(company)
+    
+    # 2. Create Profile
+    profile = CompanyProfile(
+        company_id=company.id,
+        industry="Retail & Distribution",
+        company_size="Medium",
+        channels=["E-commerce", "Retail Store"],
+        needs=["Inventory optimization", "Sales forecasting"],
+        complexity_level="Medium",
+        suggested_agents=["warehouse-intelligence", "sales-insight"]
+    )
+    db.add(profile)
+    
+    # 3. Create Agents
+    agents = [
+        ("warehouse-intelligence", "Stock monitoring and shelf life analysis"),
+        ("sales-insight", "Revenue trends and customer behavior")
+    ]
+    
+    for slug, reason in agents:
+        agent = ActiveAgent(
+            company_id=company.id,
+            agent_slug=slug,
+            is_enabled=1,
+            activation_reason=reason
+        )
+        db.add(agent)
+        db.commit()
+        db.refresh(agent)
+        
+        # 4. Create Config
+        config = AgentConfiguration(
+            active_agent_id=agent.id,
+            config_json={
+                "temperature": 0.2,
+                "max_tokens": 1000,
+                "model": "llama3-70b-8192",
+                "features": ["auto_summary", "data_extraction"]
+            },
+            use_vector_memory=0,
+            retrieval_mode="none"
+        )
+        db.add(config)
+    
+    db.commit()
+    db.refresh(company)
+    return company

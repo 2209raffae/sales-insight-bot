@@ -5,7 +5,7 @@ Datasets: Leads + Spend + Monthly Budgets.
 import uuid
 from datetime import datetime
 from sqlalchemy import (
-    Column, Integer, String, Float, DateTime, UniqueConstraint, ForeignKey, Text
+    Column, Integer, String, Float, DateTime, UniqueConstraint, ForeignKey, Text, JSON
 )
 from sqlalchemy.orm import relationship
 from database import Base
@@ -411,3 +411,68 @@ class CRMEmailRule(Base):
     resend_template_id  = Column(String, nullable=True) # Optional: Resend native Template ID
     is_active           = Column(Integer, default=1) # 1=active, 0=inactive (sqlite boolean)
     created_at          = Column(DateTime, default=datetime.utcnow)
+
+# ── Orchestrator: Multi-Tenancy & Platform Configuration ──────────────────────
+
+class Company(Base):
+    """Base entity for a tenant/organization."""
+    __tablename__ = "companies"
+
+    id           = Column(Integer, primary_key=True, index=True)
+    name         = Column(String, nullable=False, index=True)
+    description  = Column(Text, nullable=True) # Textual description for AI profiling
+    metadata_json = Column(JSON, nullable=True) # Extra info (website, domain, etc.)
+    created_at   = Column(DateTime, default=datetime.utcnow)
+
+    profile = relationship("CompanyProfile", back_populates="company", uselist=False)
+    agents  = relationship("ActiveAgent", back_populates="company")
+
+class CompanyProfile(Base):
+    """AI-generated insights about the company to drive agent configuration."""
+    __tablename__ = "company_profiles"
+
+    id               = Column(Integer, primary_key=True, index=True)
+    company_id       = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), unique=True)
+    industry        = Column(String)
+    company_size    = Column(String)
+    channels        = Column(JSON) # e.g. ["Retail", "E-commerce"]
+    needs           = Column(JSON) # e.g. ["Inventory optimization", "Lead tracking"]
+    complexity_level = Column(String)
+    suggested_agents = Column(JSON) # e.g. ["sales", "warehouse"]
+    created_at      = Column(DateTime, default=datetime.utcnow)
+
+    company = relationship("Company", back_populates="profile")
+
+class ActiveAgent(Base):
+    """Registry of activated agents for a specific company."""
+    __tablename__ = "active_agents"
+    __table_args__ = (
+        UniqueConstraint("company_id", "agent_slug", name="uq_company_agent"),
+    )
+
+    id                = Column(Integer, primary_key=True, index=True)
+    company_id        = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), index=True)
+    agent_slug        = Column(String, nullable=False) # e.g. "sales-insight"
+    is_enabled        = Column(Integer, default=1) # Boolean logic
+    activation_reason = Column(Text, nullable=True)
+    activated_at      = Column(DateTime, default=datetime.utcnow)
+
+    company = relationship("Company", back_populates="agents")
+    config  = relationship("AgentConfiguration", back_populates="active_agent", uselist=False)
+
+class AgentConfiguration(Base):
+    """Config-driven parameters for a specific agent instance."""
+    __tablename__ = "agent_configurations"
+
+    id              = Column(Integer, primary_key=True, index=True)
+    active_agent_id = Column(Integer, ForeignKey("active_agents.id", ondelete="CASCADE"), unique=True)
+    config_json     = Column(JSON, nullable=False) # The actual config object
+    
+    # RAG Readiness
+    use_vector_memory = Column(Integer, default=0)
+    knowledge_domains = Column(JSON, nullable=True)
+    retrieval_mode    = Column(String, default="none") 
+
+    updated_at      = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    active_agent = relationship("ActiveAgent", back_populates="config")

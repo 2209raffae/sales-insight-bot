@@ -36,6 +36,7 @@ import CRMPage from './pages/CRMPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AdminPanel from './pages/AdminPanel';
+import AIConsolePage from './pages/AIConsolePage';
 
 // ─── Particles Canvas ────────────────────────────────────────────────────────
 const ParticleCanvas = () => {
@@ -224,9 +225,14 @@ const UserBadge = () => {
       </div>
       <span className="text-[11px] text-slate-300 font-semibold hidden sm:block">{user.first_name}</span>
       {user.is_admin === 1 && (
-        <Link to="/admin" className="text-neon-amber hover:text-neon-amber/80 transition-colors" title="Admin Panel">
-          <Shield size={14} />
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link to="/admin" className="text-neon-amber hover:text-neon-amber/80 transition-all" title="Admin Panel">
+            <Shield size={14} />
+          </Link>
+          <Link to="/admin/orchestrator" className="text-neon-blue hover:text-neon-blue/80 transition-all border-l border-white/10 pl-3" title="AI Console">
+            <Zap size={14} />
+          </Link>
+        </div>
       )}
       <button onClick={logout} className="text-slate-400 hover:text-red-400 transition-colors" title="Logout">
         <LogOut size={14} />
@@ -303,7 +309,7 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
   } else if (path === '/sales-insight' || path === '/hr-copilot' || path === '/competitor-radar' || path === '/task-force' || path === '/warehouse' || path === '/logistics' || path === '/crm') {
     backTo = '/';
     backLabel = 'Nexus Hub';
-  } else if (path === '/admin') {
+  } else if (path === '/admin' || path === '/admin/orchestrator') {
     backTo = '/';
     backLabel = 'Nexus Hub';
   }
@@ -349,6 +355,7 @@ const AppRoutes = () => (
       {/* Protected Routes */}
       <Route path="/" element={<ProtectedRoute><NexusHub /></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+      <Route path="/admin/orchestrator" element={<ProtectedRoute><AIConsolePage /></ProtectedRoute>} />
 
       {/* Agente: Sales Insight */}
       <Route path="/sales-insight" element={<ProtectedRoute><PermissionGuard agent="sales-insight"><SalesInsightHub /></PermissionGuard></ProtectedRoute>} />

@@ -180,9 +180,9 @@ async def list_orders(db: Session = Depends(get_db)):
         if o["id"] in seq_lookup:
             o["picking_index"] = seq_lookup[o["id"]]
             # Also apply the dynamic reason so it shows up instantly without waiting for background persist!
-            seq_order = next(s for s in sequenced if s["id"] == o["id"])
-            if "ai_reason" in seq_order:
-                o["ai_reason"] = seq_order["ai_reason"]
+            seq_match = [s for s in sequenced if s["id"] == o["id"]]
+            if seq_match and "ai_reason" in seq_match[0]:
+                o["ai_reason"] = seq_match[0]["ai_reason"]
         else:
             o["picking_index"] = 9999
             

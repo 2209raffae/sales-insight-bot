@@ -170,16 +170,31 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=TokenResponse)
 def login(req: LoginRequest, db: Session = Depends(get_db)):
+    print(f"[AUTH] Login attempt for email: {req.email}")
     user = db.query(UserProfile).filter(UserProfile.email == req.email.lower().strip()).first()
     
-    if not user or not verify_password(req.password, user.hashed_pw):
+    if not user:
+        print("[AUTH] User not found")
         raise HTTPException(status_code=401, detail="Email o password errati")
     
+    print(f"[AUTH] User found: {user.id}. Verifying password...")
+    if not verify_password(req.password, user.hashed_pw):
+        print("[AUTH] Password verification failed")
+        raise HTTPException(status_code=401, detail="Email o password errati")
+    
+    print("[AUTH] Password OK. Getting permissions...")
     permissions = get_user_permissions(db, user.id)
+    
+    print("[AUTH] Creating token...")
     token = create_access_token(data={"sub": str(user.id)})
+    
+    print("[AUTH] Serializing response...")
+    response_data = serialize_user(user, permissions)
+    
+    print("[AUTH] Login successful")
     return TokenResponse(
         access_token=token,
-        user=serialize_user(user, permissions),
+        user=response_data,
     )
 
 

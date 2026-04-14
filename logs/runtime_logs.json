@@ -1,0 +1,2158 @@
+[
+  {
+    "timestamp": "2026-04-13T22:56:05.479696Z",
+    "company_id": 999,
+    "query": "Come stanno andando le vendite?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 2.4792897701263428,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:56:07.262704Z",
+    "company_id": 999,
+    "query": "Come stanno andando le vendite?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.674889326095581,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:56:09.169347Z",
+    "company_id": 999,
+    "query": "Come stanno andando le vendite?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.8115839958190918,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:56:11.366771Z",
+    "company_id": 999,
+    "query": "Controlla le vendite e dimmi se lo stock è sufficiente",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.2015347480773926,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:56:13.590945Z",
+    "company_id": 999,
+    "query": "Controlla le vendite e dimmi se lo stock è sufficiente",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.8847463130950928,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:56:15.522329Z",
+    "company_id": 999,
+    "query": "Controlla le vendite e dimmi se lo stock è sufficiente",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.8503909111022949,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:56:18.150989Z",
+    "company_id": 999,
+    "query": "Cosa devo fare oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.5394535064697266,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:56:26.385208Z",
+    "company_id": 888,
+    "query": "Qual è il tracking della spedizione 123?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 2.238171100616455,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:56:36.727849Z",
+    "company_id": 999,
+    "query": "Controlla le vendite e lo stock",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 5.198634147644043,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:56:42.781264Z",
+    "company_id": 999,
+    "query": "Dammi lo stock",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 5.07164192199707,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:56:51.895936Z",
+    "company_id": 999,
+    "query": "Le vendite di oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 5.1093456745147705,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:57:02.116622Z",
+    "company_id": 888,
+    "query": "Situazione magazzino",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 6.046627759933472,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:57:11.060087Z",
+    "company_id": 999,
+    "query": "Quanto abbiamo speso in ads?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 5.034784555435181,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:57:19.367724Z",
+    "company_id": 888,
+    "query": "Bundling suggeriti?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 5.00496506690979,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:57:28.835461Z",
+    "company_id": 999,
+    "query": "Analisi performance HR",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 5.040543556213379,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:57:37.816224Z",
+    "company_id": 888,
+    "query": "Pianifica task per progetto X",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 6.0446555614471436,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:57:45.061187Z",
+    "company_id": 999,
+    "query": "Le vendite di oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 6.105584621429443,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:57:54.166909Z",
+    "company_id": 888,
+    "query": "Situazione magazzino",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 4.0790135860443115,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:58:04.212717Z",
+    "company_id": 999,
+    "query": "Quanto abbiamo speso in ads?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 7.107196569442749,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:58:13.090937Z",
+    "company_id": 888,
+    "query": "Bundling suggeriti?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 6.013599157333374,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:58:22.227558Z",
+    "company_id": 999,
+    "query": "Analisi performance HR",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 6.095279932022095,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:58:32.306763Z",
+    "company_id": 888,
+    "query": "Pianifica task per progetto X",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 6.009034872055054,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:58:41.325873Z",
+    "company_id": 999,
+    "query": "Le vendite di oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 5.0513927936553955,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:58:48.389234Z",
+    "company_id": 888,
+    "query": "Situazione magazzino",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 4.951140403747559,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:58:58.539046Z",
+    "company_id": 999,
+    "query": "Quanto abbiamo speso in ads?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 6.1699745655059814,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:59:06.761433Z",
+    "company_id": 888,
+    "query": "Bundling suggeriti?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 6.073163270950317,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:59:17.133255Z",
+    "company_id": 999,
+    "query": "Analisi performance HR",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 6.230516195297241,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:59:27.174236Z",
+    "company_id": 888,
+    "query": "Pianifica task per progetto X",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 7.053002595901489,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:59:37.519144Z",
+    "company_id": 999,
+    "query": "Le vendite di oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 5.225097179412842,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T22:59:44.593083Z",
+    "company_id": 888,
+    "query": "Situazione magazzino",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 4.0239808559417725,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:00:53.831266Z",
+    "company_id": 999,
+    "query": "Come stanno andando le vendite?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 2.072643518447876,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:00:55.778124Z",
+    "company_id": 999,
+    "query": "Come stanno andando le vendite?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.7603702545166016,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:00:58.172312Z",
+    "company_id": 999,
+    "query": "Come stanno andando le vendite?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.99611496925354,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:01:01.022649Z",
+    "company_id": 999,
+    "query": "Controlla le vendite e dimmi se lo stock è sufficiente",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.1455655097961426,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:01:03.400635Z",
+    "company_id": 999,
+    "query": "Controlla le vendite e dimmi se lo stock è sufficiente",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.9964256286621094,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:01:05.519280Z",
+    "company_id": 999,
+    "query": "Controlla le vendite e dimmi se lo stock è sufficiente",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.8078999519348145,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:01:08.480056Z",
+    "company_id": 999,
+    "query": "Cosa devo fare oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.15366792678833,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:01:10.628447Z",
+    "company_id": 888,
+    "query": "Qual è il tracking della spedizione 123?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.9778850078582764,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:01:12.991107Z",
+    "company_id": 999,
+    "query": "Controlla le vendite e lo stock",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.084942102432251,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:01:15.410926Z",
+    "company_id": 999,
+    "query": "Dammi lo stock",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.0859427452087402,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:01:18.284006Z",
+    "company_id": 999,
+    "query": "Le vendite di oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.1514899730682373,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:01:20.526531Z",
+    "company_id": 888,
+    "query": "Situazione magazzino",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 1.0621349811553955,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:01:23.208176Z",
+    "company_id": 999,
+    "query": "Quanto abbiamo speso in ads?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.3247308731079102,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:01:25.553218Z",
+    "company_id": 888,
+    "query": "Bundling suggeriti?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 1.117502212524414,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:01:28.181842Z",
+    "company_id": 999,
+    "query": "Analisi performance HR",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.1263291835784912,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:01:34.772747Z",
+    "company_id": 888,
+    "query": "Pianifica task per progetto X",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 3.1652448177337646,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:01:41.433064Z",
+    "company_id": 999,
+    "query": "Le vendite di oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 3.412337064743042,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:01:48.223498Z",
+    "company_id": 888,
+    "query": "Situazione magazzino",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 3.2694687843322754,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:01:54.983677Z",
+    "company_id": 999,
+    "query": "Quanto abbiamo speso in ads?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 3.303524971008301,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:02:01.748865Z",
+    "company_id": 888,
+    "query": "Bundling suggeriti?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 3.0975120067596436,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:02:08.498363Z",
+    "company_id": 999,
+    "query": "Analisi performance HR",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 3.2638165950775146,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:02:15.263431Z",
+    "company_id": 888,
+    "query": "Pianifica task per progetto X",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 3.1195361614227295,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:02:21.845584Z",
+    "company_id": 999,
+    "query": "Le vendite di oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 3.399829626083374,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:02:28.244959Z",
+    "company_id": 888,
+    "query": "Situazione magazzino",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 3.0254383087158203,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:02:34.685346Z",
+    "company_id": 999,
+    "query": "Quanto abbiamo speso in ads?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 3.1832427978515625,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:02:41.248436Z",
+    "company_id": 888,
+    "query": "Bundling suggeriti?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 3.1414871215820312,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:02:47.863115Z",
+    "company_id": 999,
+    "query": "Analisi performance HR",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 3.2679553031921387,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:02:54.934263Z",
+    "company_id": 888,
+    "query": "Pianifica task per progetto X",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 3.1811490058898926,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:03:01.310414Z",
+    "company_id": 999,
+    "query": "Le vendite di oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 3.1892940998077393,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:03:07.788278Z",
+    "company_id": 888,
+    "query": "Situazione magazzino",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 3.0935373306274414,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:04:06.138620Z",
+    "company_id": 999,
+    "query": "Come stanno andando le vendite?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 2.152425527572632,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:04:08.049861Z",
+    "company_id": 999,
+    "query": "Come stanno andando le vendite?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.7721419334411621,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:04:10.037489Z",
+    "company_id": 999,
+    "query": "Come stanno andando le vendite?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.755974292755127,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:04:12.614218Z",
+    "company_id": 999,
+    "query": "Controlla le vendite e dimmi se lo stock è sufficiente",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.0870435237884521,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:04:14.542919Z",
+    "company_id": 999,
+    "query": "Controlla le vendite e dimmi se lo stock è sufficiente",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.7431633472442627,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:04:17.036650Z",
+    "company_id": 999,
+    "query": "Controlla le vendite e dimmi se lo stock è sufficiente",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.0936164855957031,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:04:19.770828Z",
+    "company_id": 999,
+    "query": "Cosa devo fare oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.2371673583984375,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:04:21.714206Z",
+    "company_id": 888,
+    "query": "Qual è il tracking della spedizione 123?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.9304149150848389,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:04:23.788810Z",
+    "company_id": 999,
+    "query": "Controlla le vendite e lo stock",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.9919877052307129,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:04:26.054390Z",
+    "company_id": 999,
+    "query": "Dammi lo stock",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.0053400993347168,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:04:28.190984Z",
+    "company_id": 999,
+    "query": "Le vendite di oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.0157966613769531,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:04:30.486515Z",
+    "company_id": 888,
+    "query": "Situazione magazzino",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.974694013595581,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:04:32.783634Z",
+    "company_id": 999,
+    "query": "Quanto abbiamo speso in ads?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.0122458934783936,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:04:34.615331Z",
+    "company_id": 888,
+    "query": "Bundling suggeriti?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.842524528503418,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:04:36.572876Z",
+    "company_id": 999,
+    "query": "Analisi performance HR",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.9563941955566406,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:04:38.588096Z",
+    "company_id": 888,
+    "query": "Pianifica task per progetto X",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.8896069526672363,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:04:41.951591Z",
+    "company_id": 999,
+    "query": "Le vendite di oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.0247893333435059,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:04:50.002234Z",
+    "company_id": 888,
+    "query": "Situazione magazzino",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.8741416931152344,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:04:56.518872Z",
+    "company_id": 999,
+    "query": "Quanto abbiamo speso in ads?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.9484105110168457,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:05:01.452254Z",
+    "company_id": 888,
+    "query": "Bundling suggeriti?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.8572003841400146,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:05:07.624697Z",
+    "company_id": 999,
+    "query": "Analisi performance HR",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.9643189907073975,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:05:15.787912Z",
+    "company_id": 888,
+    "query": "Pianifica task per progetto X",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.8989183902740479,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:06:25.349378Z",
+    "company_id": 999,
+    "query": "Le vendite di oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 68.34450793266296,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:06:27.246873Z",
+    "company_id": 888,
+    "query": "Situazione magazzino",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.8348908424377441,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:06:29.179437Z",
+    "company_id": 999,
+    "query": "Quanto abbiamo speso in ads?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.9405901432037354,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:06:30.954470Z",
+    "company_id": 999,
+    "query": "Come stanno andando le vendite?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 46.9746458530426,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:06:31.148582Z",
+    "company_id": 888,
+    "query": "Bundling suggeriti?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 1.0354111194610596,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:06:32.568564Z",
+    "company_id": 999,
+    "query": "Come stanno andando le vendite?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.6750199794769287,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:06:33.352401Z",
+    "company_id": 999,
+    "query": "Analisi performance HR",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.025235652923584,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:06:34.151234Z",
+    "company_id": 999,
+    "query": "Come stanno andando le vendite?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.6383876800537109,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:06:35.487080Z",
+    "company_id": 888,
+    "query": "Pianifica task per progetto X",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.9248788356781006,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:06:37.469267Z",
+    "company_id": 999,
+    "query": "Controlla le vendite e dimmi se lo stock è sufficiente",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.0742018222808838,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:06:46.153576Z",
+    "company_id": 999,
+    "query": "Controlla le vendite e dimmi se lo stock è sufficiente",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.6381709575653076,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:06:53.237835Z",
+    "company_id": 999,
+    "query": "Controlla le vendite e dimmi se lo stock è sufficiente",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.6430208683013916,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:06:54.250570Z",
+    "company_id": 999,
+    "query": "Le vendite di oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.0070054531097412,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:06:59.412623Z",
+    "company_id": 888,
+    "query": "Situazione magazzino",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 1.0208208560943604,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:07:08.299619Z",
+    "company_id": 999,
+    "query": "Cosa devo fare oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.0851409435272217,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:07:15.164800Z",
+    "company_id": 888,
+    "query": "Qual è il tracking della spedizione 123?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.8766701221466064,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:07:21.345247Z",
+    "company_id": 999,
+    "query": "Controlla le vendite e lo stock",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.9867687225341797,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:07:27.457211Z",
+    "company_id": 999,
+    "query": "Dammi lo stock",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.9934167861938477,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:07:35.541033Z",
+    "company_id": 999,
+    "query": "Le vendite di oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.9498558044433594,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:07:41.453580Z",
+    "company_id": 888,
+    "query": "Situazione magazzino",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.8507490158081055,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:07:49.686450Z",
+    "company_id": 999,
+    "query": "Quanto abbiamo speso in ads?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.978085994720459,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:07:56.659771Z",
+    "company_id": 888,
+    "query": "Bundling suggeriti?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.8722493648529053,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:08:03.442346Z",
+    "company_id": 999,
+    "query": "Analisi performance HR",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.9421169757843018,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:08:13.358552Z",
+    "company_id": 888,
+    "query": "Pianifica task per progetto X",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.8334000110626221,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:08:20.402585Z",
+    "company_id": 999,
+    "query": "Le vendite di oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.947746753692627,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:08:26.652743Z",
+    "company_id": 888,
+    "query": "Situazione magazzino",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.8638176918029785,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:08:32.699525Z",
+    "company_id": 999,
+    "query": "Quanto abbiamo speso in ads?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.9436306953430176,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:08:38.775769Z",
+    "company_id": 888,
+    "query": "Bundling suggeriti?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 1.0631132125854492,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:08:46.159852Z",
+    "company_id": 999,
+    "query": "Analisi performance HR",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.9947032928466797,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:08:53.222509Z",
+    "company_id": 888,
+    "query": "Pianifica task per progetto X",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.8640236854553223,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:09:33.886724Z",
+    "company_id": 999,
+    "query": "Come stanno andando le vendite?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 2.0024800300598145,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:09:35.482568Z",
+    "company_id": 999,
+    "query": "Come stanno andando le vendite?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.6123232841491699,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:09:36.935128Z",
+    "company_id": 999,
+    "query": "Come stanno andando le vendite?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.5997004508972168,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:09:39.285089Z",
+    "company_id": 999,
+    "query": "Controlla le vendite e dimmi se lo stock è sufficiente",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.9536633491516113,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:09:40.909353Z",
+    "company_id": 999,
+    "query": "Controlla le vendite e dimmi se lo stock è sufficiente",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.6722152233123779,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:09:42.628979Z",
+    "company_id": 999,
+    "query": "Controlla le vendite e dimmi se lo stock è sufficiente",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.6544189453125,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:09:45.724794Z",
+    "company_id": 999,
+    "query": "Cosa devo fare oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.9440758228302002,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:09:52.614050Z",
+    "company_id": 888,
+    "query": "Qual è il tracking della spedizione 123?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.8340232372283936,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:09:57.774938Z",
+    "company_id": 999,
+    "query": "Controlla le vendite e lo stock",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.1645057201385498,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:09:57.948013Z",
+    "company_id": 999,
+    "query": "Le vendite di oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 54.050363063812256,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:10:04.212422Z",
+    "company_id": 999,
+    "query": "Dammi lo stock",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.0272197723388672,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:10:07.585598Z",
+    "company_id": 888,
+    "query": "Situazione magazzino",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.9288427829742432,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:10:11.343802Z",
+    "company_id": 999,
+    "query": "Le vendite di oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.9653563499450684,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:10:18.355477Z",
+    "company_id": 888,
+    "query": "Situazione magazzino",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.864459753036499,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:10:20.199455Z",
+    "company_id": 999,
+    "query": "Quanto abbiamo speso in ads?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.9504263401031494,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:10:25.190090Z",
+    "company_id": 888,
+    "query": "Bundling suggeriti?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.9024038314819336,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:10:32.551105Z",
+    "company_id": 999,
+    "query": "Analisi performance HR",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.0044670104980469,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:10:33.050388Z",
+    "company_id": 999,
+    "query": "Quanto abbiamo speso in ads?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.9688200950622559,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:10:40.701560Z",
+    "company_id": 888,
+    "query": "Pianifica task per progetto X",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.8938031196594238,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:10:48.645038Z",
+    "company_id": 888,
+    "query": "Bundling suggeriti?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.8881959915161133,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:10:48.827614Z",
+    "company_id": 999,
+    "query": "Le vendite di oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.9882330894470215,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:10:55.038025Z",
+    "company_id": 999,
+    "query": "Analisi performance HR",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.0592041015625,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:11:02.010100Z",
+    "company_id": 888,
+    "query": "Pianifica task per progetto X",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.8775105476379395,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:11:03.560188Z",
+    "company_id": 888,
+    "query": "Situazione magazzino",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.9443764686584473,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:11:09.207752Z",
+    "company_id": 999,
+    "query": "Le vendite di oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.0718998908996582,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:11:16.409697Z",
+    "company_id": 888,
+    "query": "Situazione magazzino",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.8746178150177002,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:11:18.744324Z",
+    "company_id": 999,
+    "query": "Quanto abbiamo speso in ads?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.9507274627685547,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:11:28.632008Z",
+    "company_id": 888,
+    "query": "Bundling suggeriti?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.8681554794311523,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:11:36.138971Z",
+    "company_id": 999,
+    "query": "Analisi performance HR",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.0653040409088135,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:11:41.045436Z",
+    "company_id": 888,
+    "query": "Pianifica task per progetto X",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.8685181140899658,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:11:50.169928Z",
+    "company_id": 999,
+    "query": "Le vendite di oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.950927734375,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:11:56.128827Z",
+    "company_id": 888,
+    "query": "Situazione magazzino",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.926776647567749,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:12:03.355347Z",
+    "company_id": 999,
+    "query": "Quanto abbiamo speso in ads?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.9897842407226562,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:12:56.786188Z",
+    "company_id": 888,
+    "query": "Bundling suggeriti?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 52.395784854888916,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:12:58.925390Z",
+    "company_id": 999,
+    "query": "Analisi performance HR",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.935490608215332,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:13:01.024387Z",
+    "company_id": 888,
+    "query": "Pianifica task per progetto X",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.8667480945587158,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-13T23:13:02.976603Z",
+    "company_id": 999,
+    "query": "Le vendite di oggi?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 0.9542508125305176,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-13T23:13:04.913514Z",
+    "company_id": 888,
+    "query": "Situazione magazzino",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 0.8728897571563721,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-14T18:26:39.438220Z",
+    "company_id": 999,
+    "query": "Quali sono i prodotti sotto scorta nel magazzino?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 4.334211826324463,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-14T18:45:12.156673Z",
+    "company_id": 1,
+    "query": "Perché le vendite calano nonostante il magazzino sia pieno?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 2.035717487335205,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-14T18:46:01.398299Z",
+    "company_id": 1,
+    "query": "Perché le vendite calano nonostante il magazzino sia pieno?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.5032167434692383,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-14T18:46:17.304507Z",
+    "company_id": 1,
+    "query": "Fammi un riepilogo generale delle performance aziendali.",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.8668673038482666,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-14T22:50:15.421499Z",
+    "company_id": 888,
+    "query": "Quali sono i prodotti sotto scorta nel magazzino?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "crm-automation"
+    ],
+    "execution_time": 1.921243667602539,
+    "status": "partial_failure"
+  },
+  {
+    "timestamp": "2026-04-14T22:50:35.346287Z",
+    "company_id": 2,
+    "query": "Quali sono i prodotti sotto scorta nel magazzino?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.8742904663085938,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-14T22:50:48.789082Z",
+    "company_id": 2,
+    "query": "Quali sono i prodotti sotto scorta nel magazzino?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.3783037662506104,
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-04-14T22:52:09.307553Z",
+    "company_id": 1,
+    "query": "Perché le vendite calano nonostante il magazzino sia pieno?",
+    "intents": [
+      "general_business"
+    ],
+    "agents": [
+      "sales-insight",
+      "warehouse-intelligence"
+    ],
+    "execution_time": 1.4208400249481201,
+    "status": "success"
+  }
+]

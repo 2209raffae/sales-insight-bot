@@ -26,7 +26,7 @@ from models import Base, LeadRecord, CampaignSpend, UploadBatch, CampaignMonthly
 
 from routers import leads_upload, leads_kpi, chat
 from routers import spend_upload, spend_kpi, spend_advanced, uploads, budgets, manual_spend, report
-from routers import hr_screening, hr_performance, hr_chat
+from routers import hr_screening, hr_performance, hr_chat, orchestrator, runtime
 from routers import auth, admin, competitor, taskforce, warehouse, warehouse_upload, logistics, crm
 
 app = FastAPI(
@@ -108,12 +108,14 @@ app.include_router(hr_performance.router)
 app.include_router(hr_chat.router)
 app.include_router(auth.router)
 app.include_router(admin.router)
-app.include_router(competitor.router)
-app.include_router(taskforce.router)
+app.include_router(crm.router)
+app.include_router(logistics.router)
 app.include_router(warehouse.router)
 app.include_router(warehouse_upload.router)
-app.include_router(logistics.router)
-app.include_router(crm.router)
+app.include_router(competitor.router)
+app.include_router(taskforce.router)
+app.include_router(orchestrator.router)
+app.include_router(runtime.router)
 
 
 
@@ -158,14 +160,21 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
     import traceback
-    traceback.print_exc() # Print the real error to console
+    error_trace = traceback.format_exc()
+    print(error_trace) # Print the real error to console
     if request.url.path.startswith("/api"):
-        return JSONResponse(status_code=500, content={"detail": str(exc)})
+        return JSONResponse(
+            status_code=500, 
+            content={
+                "detail": str(exc),
+                "traceback": error_trace
+            }
+        )
     return JSONResponse(status_code=500, content={"detail": "Internal server error."})
 
 
 if __name__ == "__main__":
     import uvicorn
     import os
-    port = int(os.environ.get("PORT", 4000))
+    port = int(os.environ.get("PORT", 8015))
     uvicorn.run("main:app", host="0.0.0.0", port=port)

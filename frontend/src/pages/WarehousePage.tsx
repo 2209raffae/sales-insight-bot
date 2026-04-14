@@ -80,13 +80,34 @@ const WarehousePage: React.FC = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
+      console.log('WarehousePage: Fetching products and stats...');
       const [pRes, cRes] = await Promise.all([
         axios.get('/api/warehouse/products'),
         axios.get('/api/warehouse/stats/charts')
       ]);
-      setProducts(pRes.data);
-      setChartData(cRes.data);
-    } catch (err) { console.error(err); } finally { setLoading(false); }
+      console.log('WarehousePage: Products received:', pRes.data);
+      console.log('WarehousePage: Charts received:', cRes.data);
+
+      if (Array.isArray(pRes.data)) {
+        setProducts(pRes.data);
+      } else {
+        console.error('WarehousePage: Products response is not an array:', pRes.data);
+        setProducts([]);
+      }
+
+      if (Array.isArray(cRes.data)) {
+        setChartData(cRes.data);
+      } else {
+        console.error('WarehousePage: Charts response is not an array:', cRes.data);
+        setChartData([]);
+      }
+    } catch (err) { 
+      console.error('WarehousePage: Fetch error:', err); 
+      setProducts([]);
+      setChartData([]);
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const fetchAiStrategy = async () => {
@@ -192,23 +213,27 @@ const WarehousePage: React.FC = () => {
   };
 
   const sortedProducts = useMemo(() => {
-    let res = products.filter(p => {
-      const ms = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.sku.toLowerCase().includes(searchTerm.toLowerCase());
+    const safeProducts = Array.isArray(products) ? products : [];
+    let res = safeProducts.filter(p => {
+      const ms = (p.name || "").toLowerCase().includes(searchTerm.toLowerCase()) || (p.sku || "").toLowerCase().includes(searchTerm.toLowerCase());
       const mc = categoryFilter === 'all' || p.category === categoryFilter;
       const mqty = minQty === '' || p.quantity >= parseInt(minQty);
       return ms && mc && mqty;
     });
-    if (sortBy.includes('price')) res.sort((a,b) => sortBy.includes('asc') ? a.selling_price-b.selling_price : b.selling_price-a.selling_price);
-    if (sortBy.includes('qty')) res.sort((a,b) => sortBy.includes('asc') ? a.quantity-b.quantity : b.quantity-a.quantity);
+    if (sortBy.includes('price')) res.sort((a,b) => sortBy.includes('asc') ? (a.selling_price || 0) - (b.selling_price || 0) : (b.selling_price || 0) - (a.selling_price || 0));
+    if (sortBy.includes('qty')) res.sort((a,b) => sortBy.includes('asc') ? (a.quantity || 0) - (b.quantity || 0) : (b.quantity || 0) - (a.quantity || 0));
     if (sortBy.includes('margin')) res.sort((a,b) => sortBy.includes('asc') ? (a.margin_pct||0)-(b.margin_pct||0) : (b.margin_pct||0)-(a.margin_pct||0));
     return res;
   }, [products, searchTerm, categoryFilter, sortBy, minQty]);
 
-  const stats = useMemo(() => ({
-    totalStock: products.reduce((a,p) => a+p.quantity, 0),
-    totalPurchase: products.reduce((a,p) => a + (p.purchase_price * p.quantity), 0),
-    available: products.filter(p => p.quantity > 0).length
-  }), [products]);
+  const stats = useMemo(() => {
+    const safeProducts = Array.isArray(products) ? products : [];
+    return {
+      totalStock: safeProducts.reduce((a,p) => a + (p.quantity || 0), 0),
+      totalPurchase: safeProducts.reduce((a,p) => a + ((p.purchase_price || 0) * (p.quantity || 0)), 0),
+      available: safeProducts.filter(p => (p.quantity || 0) > 0).length
+    };
+  }, [products]);
 
   const handleImageUpload = async (productId: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

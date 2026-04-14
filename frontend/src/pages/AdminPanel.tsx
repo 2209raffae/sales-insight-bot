@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Trash2, Save, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import { Shield, Trash2, Save, ChevronDown, ChevronUp, AlertTriangle, Zap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 
@@ -216,6 +217,12 @@ const AdminPanel = () => {
                         >
                             Categorie Competenze
                         </button>
+                        <Link 
+                            to="/admin/orchestrator"
+                            className="text-xs uppercase font-bold tracking-widest pb-2 border-b-2 border-transparent text-neon-blue hover:text-neon-blue/80 transition-all flex items-center gap-1.5"
+                        >
+                            AI Console
+                        </Link>
                     </div>
                 </div>
             </motion.div>
