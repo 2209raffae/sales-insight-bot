@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Trash2, Save, ChevronDown, ChevronUp, AlertTriangle, Zap } from 'lucide-react';
+import { Shield, Trash2, Save, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 

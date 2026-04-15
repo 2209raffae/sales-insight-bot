@@ -4,7 +4,7 @@ import {
   BarChart as ReBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
 import { 
-  Upload, Download, ArrowLeft, Image as ImageIcon, Star, Trash, Lock,
+  Upload, Download, ArrowLeft, Image as ImageIcon, Star, Trash,
   Package, Plus, TrendingUp, Layers, Sparkles, ChevronDown, ChevronUp,
   X, Search, CheckSquare, Square, Eye, EyeOff, History, Edit3, Trash2
 } from 'lucide-react';

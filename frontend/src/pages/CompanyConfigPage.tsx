@@ -250,6 +250,9 @@ const ICON_MAP: Record<string, React.ElementType> = {
   'crm': Users,
 };
 
+// Agents that cannot be toggled off (core/essential agents) — currently none are locked
+const LOCKED_SLUGS = new Set<string>([]);
+
 // ── Toast System ──────────────────────────────────────────────────────────────
 
 const ToastContainer = ({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: number) => void }) => (

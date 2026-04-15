@@ -1,15 +1,11 @@
-import React from 'react';
 import { 
-  Play, Clock, Database, Search, Shield, Zap, AlertCircle, 
-  Terminal, BarChart2, Activity, ChevronRight, Layout,
+  Play, Clock, Database, Zap, AlertCircle, 
+  Terminal, BarChart2, Activity, ChevronRight,
   RefreshCw, PlusCircle, Bot, AlertTriangle, Layers
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-interface Company {
-  id: number;
-  name: string;
-}
+
 
 interface HistoryItem {
   query: string;
@@ -27,7 +23,6 @@ export const QueryForm = ({
   setCurrentCompany, 
   query, 
   setQuery,
-  onRefreshCompanies
 }: any) => {
   const isCompaniesArray = Array.isArray(companies);
   const noCompanies = isCompaniesArray && companies.length === 0;
@@ -333,7 +328,7 @@ export const HistoryPanel = ({ history, onLoad, companies }: any) => {
   );
 };
 
-export const QuickActions = ({ onSelect, currentCompany }: any) => {
+export const QuickActions = ({ onSelect }: any) => {
   const tests = [
     { label: 'Sales analysis', query: 'Come stanno andando le vendite questo mese?', color: 'text-neon-blue', variant: 'blue' },
     { label: 'Stock check', query: 'Quali sono i prodotti sotto scorta nel magazzino?', color: 'text-neon-amber', variant: 'amber' },

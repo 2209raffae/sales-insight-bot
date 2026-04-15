@@ -301,7 +301,7 @@ const TextField = ({
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export const AgentConfigPanel = ({
-  companyId, agentSlug, agentLabel, agentAccent, token, onSaveSuccess,
+  companyId, agentSlug, agentAccent, token, onSaveSuccess,
 }: Props) => {
   const [response, setResponse] = useState<ConfigResponse | null>(null);
   const [values, setValues] = useState<Record<string, unknown>>({});
