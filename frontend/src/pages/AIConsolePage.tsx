@@ -253,6 +253,18 @@ const AIConsolePage = () => {
                         onRefreshCompanies={fetchCompanies}
                     />
 
+                    {/* Quick link to Agent Config for selected company */}
+                    {currentCompany && (
+                        <Link
+                            to={`/admin/companies/${currentCompany}/config`}
+                            className="flex items-center gap-2 p-3 rounded-xl border border-neon-blue/20 bg-neon-blue/5 hover:bg-neon-blue/10 transition-all text-neon-blue text-xs font-bold uppercase tracking-widest group"
+                        >
+                            <Layout size={14} />
+                            Configura Agenti
+                            <span className="ml-auto text-neon-blue/40 group-hover:text-neon-blue transition-colors">→</span>
+                        </Link>
+                    )}
+
                     <div className="space-y-4">
                         <div className="flex items-center justify-between px-2">
                             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Azioni Rapide</span>

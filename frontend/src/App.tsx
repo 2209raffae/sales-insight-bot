@@ -37,6 +37,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AdminPanel from './pages/AdminPanel';
 import AIConsolePage from './pages/AIConsolePage';
+import CompanyConfigPage from './pages/CompanyConfigPage';
 
 // ─── Particles Canvas ────────────────────────────────────────────────────────
 const ParticleCanvas = () => {
@@ -312,6 +313,9 @@ const LayoutContent = ({ children }: { children: React.ReactNode }) => {
   } else if (path === '/admin' || path === '/admin/orchestrator') {
     backTo = '/';
     backLabel = 'Nexus Hub';
+  } else if (path.startsWith('/admin/companies/')) {
+    backTo = '/admin';
+    backLabel = 'Admin Panel';
   }
 
   const isAgentHub = path === '/' || path === '/sales-insight' || path === '/hr-copilot' || path === '/competitor-radar' || path === '/task-force' || path === '/warehouse';
@@ -356,6 +360,7 @@ const AppRoutes = () => (
       <Route path="/" element={<ProtectedRoute><NexusHub /></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
       <Route path="/admin/orchestrator" element={<ProtectedRoute><AIConsolePage /></ProtectedRoute>} />
+      <Route path="/admin/companies/:id/config" element={<ProtectedRoute><CompanyConfigPage /></ProtectedRoute>} />
 
       {/* Agente: Sales Insight */}
       <Route path="/sales-insight" element={<ProtectedRoute><PermissionGuard agent="sales-insight"><SalesInsightHub /></PermissionGuard></ProtectedRoute>} />
